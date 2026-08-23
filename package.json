@@ -1,0 +1,28 @@
+{
+  "name": "rcoem-operation-75",
+  "version": "1.1.0",
+  "description": "Smart Attendance Companion & Intelligent Bunk Planner for RCOEM / RBU Students.",
+  "main": "src/background/service-worker.js",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/content/main.js --bundle --outfile=src/content/content.bundle.js --format=iife",
+    "watch": "esbuild src/content/main.js --bundle --outfile=src/content/content.bundle.js --format=iife --watch",
+    "package": "npm run build && zip -r operation-75-v1.1.0.zip manifest.json src icons web-accessible"
+  },
+  "keywords": [
+    "chrome-extension",
+    "manifest-v3",
+    "attendance-tracker",
+    "rcoem",
+    "rbu",
+    "student-productivity",
+    "bunk-planner",
+    "smart-schedule",
+    "education-tech"
+  ],
+  "author": "Nakul Mundhada",
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.21.0"
+  }
+}

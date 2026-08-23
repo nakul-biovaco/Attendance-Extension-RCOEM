@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RCOEM/RBU Operation 75 — Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+
+  <header class="juno-topbar">
+    <div class="juno-topbar-inner">
+      <div class="juno-brand">
+        <img src="../../icons/icon48.png" alt="RCOEM/RBU Operation 75" class="juno-logo-icon">
+        <span class="juno-system-title">RCOEM/RBU Operation 75</span>
+      </div>
+      <div class="juno-user-panel">
+        <div class="user-details">
+          <span id="student-name-display" class="user-name">Student Configuration</span>
+          <span id="student-role-display" class="user-role" style="display:none">Student</span>
+        </div>
+        <div class="user-avatar-circle" title="Student Profile">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+          </svg>
+        </div>
+        <div id="save-indicator" class="save-indicator" style="display:none">Configuration Saved</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="options-container">
+    <div class="juno-page-header">
+      <div class="student-badge-title">STUDENT SETTINGS</div>
+      <div id="portal-live-clock" class="juno-timestamp"></div>
+    </div>
+
+    <main class="options-main">
+
+      <section id="section-targets" class="juno-panel">
+        <div class="panel-header">
+          <h3>ATTENDANCE TARGET RULES</h3>
+        </div>
+        <div class="panel-body">
+          <p class="panel-note">Configure minimum attendance criteria mandated by the institution and individual courses.</p>
+
+          <div class="juno-form-grid">
+            <div class="juno-field">
+              <label for="overall-target">Institutional Minimum Attendance (%)</label>
+              <div class="field-hint">Institutional criteria across all enrolled subjects (Standard: 75%).</div>
+              <input type="number" id="overall-target" min="0" max="100" step="1" value="75">
+            </div>
+
+            <div class="juno-field">
+              <label for="subject-target">Individual Course Minimum (%)</label>
+              <div class="field-hint">Minimum threshold required per course to avoid detention (Standard: 60%).</div>
+              <input type="number" id="subject-target" min="0" max="100" step="1" value="60">
+            </div>
+
+            <div class="juno-field">
+              <label for="safety-buffer">Safe Bunk Margin Buffer (%)</label>
+              <div class="field-hint">Additional protection percentage applied before recommending safe bunks.</div>
+              <input type="number" id="safety-buffer" min="0" max="20" step="0.5" value="2">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="section-schedule" class="juno-panel">
+        <div class="panel-header">
+          <h3>SEMESTER TIMELINE & SCHEDULE PREFERENCES</h3>
+        </div>
+        <div class="panel-body">
+          <p class="panel-note">Set estimated term completion date and configure day-level attendance preferences.</p>
+
+          <div class="juno-form-grid">
+            <div class="juno-field">
+              <label for="semester-end">Estimated Semester End Date</label>
+              <div class="field-hint">Used by the projection engine to forecast remaining lectures and final percentages.</div>
+              <input type="date" id="semester-end" value="">
+            </div>
+
+            <div class="juno-field">
+              <label for="portal-domain">Portal Hostname</label>
+              <div class="field-hint">College ERP domain for student access (e.g. rcoem.in).</div>
+              <input type="text" id="portal-domain" placeholder="rcoem.in" value="rcoem.in">
+            </div>
+
+            <div class="juno-field full-width">
+              <label>Preferred Absence Days</label>
+              <div class="field-hint">Optimizer will prioritize safe bunk recommendations on these days when criteria is satisfied.</div>
+              <div class="day-picker">
+                <label class="day-chip"><input type="checkbox" value="0"> <span>Sun</span></label>
+                <label class="day-chip"><input type="checkbox" value="1"> <span>Mon</span></label>
+                <label class="day-chip"><input type="checkbox" value="2"> <span>Tue</span></label>
+                <label class="day-chip"><input type="checkbox" value="3"> <span>Wed</span></label>
+                <label class="day-chip"><input type="checkbox" value="4"> <span>Thu</span></label>
+                <label class="day-chip"><input type="checkbox" value="5"> <span>Fri</span></label>
+                <label class="day-chip"><input type="checkbox" value="6"> <span>Sat</span></label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="section-aliases" class="juno-panel">
+        <div class="panel-header">
+          <h3>SUBJECT NAME MAPPING & ALIASES</h3>
+        </div>
+        <div class="panel-body">
+          <p class="panel-note">Map timetable short codes / elective abbreviations to official course names in attendance ledger.</p>
+
+          <div id="alias-list" class="alias-list">
+
+          </div>
+
+          <div class="alias-add-row">
+            <input type="text" id="alias-schedule" placeholder="Timetable Code (e.g., PE3)">
+            <span class="alias-arrow">&rarr;</span>
+            <input type="text" id="alias-attendance" placeholder="Course Name (e.g., Microwave Theory)">
+            <button id="btn-add-alias" class="juno-btn secondary">Add Mapping</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="section-system" class="juno-panel">
+        <div class="panel-header">
+          <h3>SYSTEM PREFERENCES & DATA MANAGEMENT</h3>
+        </div>
+        <div class="panel-body">
+          <div class="juno-form-grid">
+            <div class="juno-field">
+              <label for="stale-threshold">Cache Validity Period (Hours)</label>
+              <div class="field-hint">Hours before extension prompts resynchronization with portal.</div>
+              <input type="number" id="stale-threshold" min="1" max="168" step="1" value="48">
+            </div>
+
+            <div class="juno-field">
+              <label>Developer Diagnostics</label>
+              <div class="field-hint">Enable technical logging and raw inspection tools in popup.</div>
+              <div class="toggle-row">
+                <span class="toggle-label">Debug Mode</span>
+                <label class="toggle">
+                  <input type="checkbox" id="debug-mode">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-divider"></div>
+
+          <div class="juno-data-actions">
+            <button id="btn-export-data" class="juno-btn outline">
+              Export Configuration & Attendance (JSON)
+            </button>
+            <button id="btn-clear-data" class="juno-btn danger">
+              Reset Local Storage & Data
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <div class="juno-action-bar">
+        <button id="btn-save-settings" class="juno-btn primary">SAVE CONFIGURATION</button>
+      </div>
+
+      <section class="juno-panel info-panel">
+        <div class="panel-header">
+          <h3>SUPPORT, DOCUMENTATION & PRIVACY</h3>
+        </div>
+        <div class="panel-body">
+          <div class="info-grid">
+
+            <div class="info-card">
+              <div class="info-card-header">
+                <h4>Support</h4>
+              </div>
+              <p class="info-card-text">
+                Need help or facing synchronization issues? Make sure you are logged in to your student portal and refresh the attendance page.
+              </p>
+              <ul class="info-list">
+                <li><strong>Auto-Sync:</strong> Opens student attendance table and reads live records.</li>
+                <li><strong>Reset:</strong> Use the reset button above if attendance counts get stuck.</li>
+                <li><strong>Contact:</strong> Built by students for students of RCOEM / RBU.</li>
+              </ul>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card-header">
+                <h4>Documentation</h4>
+              </div>
+              <p class="info-card-text">
+                Operation 75 helps you manage your semester attendance simply and accurately:
+              </p>
+              <ul class="info-list">
+                <li><strong>Target Attendance:</strong> Default 75% overall and 60% per-course minimum.</li>
+                <li><strong>Safe Bunk:</strong> Calculates how many classes you can skip without falling below target.</li>
+                <li><strong>Classes to Maintain:</strong> Shows exact classes needed to reach 75%.</li>
+                <li><strong>Term Forecast:</strong> Projects your final percentage at semester end.</li>
+              </ul>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card-header">
+                <h4>Privacy Policy</h4>
+              </div>
+              <p class="info-card-text">
+                Your data belongs entirely to you. We follow strict privacy-first principles:
+              </p>
+              <ul class="info-list">
+                <li><strong>100% Local:</strong> All data is stored directly in your browser's local storage.</li>
+                <li><strong>Zero External Servers:</strong> No personal details, passwords, or attendance data are ever transmitted outside.</li>
+                <li><strong>Full Control:</strong> You can export or delete all stored data with a single click.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="juno-footer">
+      <div class="footer-powered">
+        RCOEM / RBU <strong>Operation 75</strong> &bull; Student Attendance Companion
+      </div>
+    </footer>
+  </div>
+
+  <script src="options.js" type="module"></script>
+</body>
+</html>

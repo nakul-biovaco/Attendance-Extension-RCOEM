@@ -1,0 +1,45 @@
+.ai-card {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  box-sizing: border-box !important;
+}
+
+.ai-card * {
+  box-sizing: border-box !important;
+}
+
+@keyframes ai-fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ai-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+[data-ai-injected] {
+  animation: ai-fadeIn 0.3s ease !important;
+}
+
+[data-ai-injected]:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-ai-attendance-injected] {
+  animation: ai-fadeIn 0.3s ease !important;
+}
+
+@media print {
+  [data-ai-injected],
+  [data-ai-attendance-injected] {
+    display: none !important;
+  }
+}

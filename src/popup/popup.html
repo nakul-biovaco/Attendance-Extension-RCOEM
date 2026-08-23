@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=420, initial-scale=1.0">
+  <title>RCOEM/RBU Operation 75</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+  <div class="popup-container">
+
+    <header class="popup-header">
+      <div class="header-left">
+        <div class="header-text">
+          <h1>RCOEM/RBU Operation 75</h1>
+          <div id="sync-status" class="sync-status">Checking portal sync...</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <button id="btn-refresh" class="icon-btn" title="Refresh Calculations">Refresh</button>
+        <button id="btn-debug" class="icon-btn" title="Debug Info">Debug</button>
+        <button id="btn-settings" class="icon-btn" title="Settings">Settings</button>
+      </div>
+    </header>
+
+    <div id="view-firstrun" class="view" style="display:none">
+      <div class="welcome-card">
+        <h2>Welcome to RCOEM/RBU Operation 75</h2>
+        <p>A simple attendance companion for RCOEM students to monitor attendance, calculate requirements, and plan their semester smarter.</p>
+        <div class="steps">
+          <div class="step" id="step-1">
+            <div>
+              <span class="step-num">1</span>
+              <span>Open Schedule Page</span>
+            </div>
+            <span class="step-status" id="step-1-status">Pending</span>
+          </div>
+          <div class="step" id="step-2">
+            <div>
+              <span class="step-num">2</span>
+              <span>Open Attendance Page</span>
+            </div>
+            <span class="step-status" id="step-2-status">Pending</span>
+          </div>
+          <div class="step" id="step-3">
+            <div>
+              <span class="step-num">3</span>
+              <span>Ready: Attendance predictions will calculate automatically</span>
+            </div>
+            <span class="step-status" id="step-3-status">Pending</span>
+          </div>
+        </div>
+        <p class="hint">Attendance and classes are read automatically from your logged-in portal.</p>
+      </div>
+    </div>
+
+    <div id="view-dashboard" class="view" style="display:none">
+
+      <div class="overall-card">
+        <div class="overall-circle">
+          <svg viewBox="0 0 120 120" class="progress-ring">
+            <circle class="progress-bg" cx="60" cy="60" r="52" />
+            <circle id="progress-circle" class="progress-fg" cx="60" cy="60" r="52" />
+          </svg>
+          <div class="overall-text">
+            <span id="overall-pct" class="overall-pct">—</span>
+            <span class="overall-label">Overall</span>
+          </div>
+        </div>
+        <div class="overall-info">
+          <div class="info-row">
+            <span class="info-label">Overall Target</span>
+            <span id="overall-target" class="info-value">75%</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Subject Target</span>
+            <span class="info-value">60%</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Total Subjects</span>
+            <span id="total-subjects" class="info-value">—</span>
+          </div>
+          <div id="overall-status-row" class="info-row" style="display:none;margin-top:4px;border-top:1px dashed var(--border);padding-top:4px">
+            <span class="info-label" id="overall-recovery-label" style="color:var(--red);font-weight:600">Recovery Classes</span>
+            <span id="overall-recovery-needed" class="info-value" style="color:var(--red);font-weight:700">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="badges-section" class="badges-section" style="display:none">
+        <div class="badges-header">
+          <span class="badges-title">ATTENDANCE STATUS & MILESTONES</span>
+          <span id="badges-count" class="badges-count">0/0</span>
+        </div>
+        <div id="badges-grid" class="badges-grid">
+
+        </div>
+      </div>
+
+      <button id="btn-bunk-today" class="bunk-today-btn">
+        <span class="bunk-text">CAN I BUNK TODAY?</span>
+        <span class="bunk-arrow">Check Analysis &rarr;</span>
+      </button>
+
+      <div class="today-summary">
+        <h3 class="section-title">TODAY'S CLASSES</h3>
+        <div class="summary-grid">
+          <div class="summary-item total">
+            <span id="today-total" class="summary-num">0</span>
+            <span class="summary-label">Total</span>
+          </div>
+          <div class="summary-item attend">
+            <span id="today-attend" class="summary-num">0</span>
+            <span class="summary-label">Must Attend</span>
+          </div>
+          <div class="summary-item bunk">
+            <span id="today-bunk" class="summary-num">0</span>
+            <span class="summary-label">Safe to Bunk</span>
+          </div>
+          <div class="summary-item unverified">
+            <span id="today-unverified" class="summary-num">0</span>
+            <span class="summary-label">Unverified</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="recommendations-list" class="recommendations-list">
+
+      </div>
+
+      <div id="risk-card" class="risk-card" style="display:none">
+        <div class="risk-header">
+          <span class="risk-title">ATTENTION NEEDED</span>
+        </div>
+        <div id="risk-subject" class="risk-subject">—</div>
+        <div id="risk-detail" class="risk-detail">—</div>
+      </div>
+    </div>
+
+    <div id="view-bunk" class="view" style="display:none">
+      <button id="btn-back-bunk" class="back-btn">&larr; Back</button>
+      <h2 class="view-title">CAN I BUNK TODAY?</h2>
+      <div id="bunk-summary-text" class="bunk-summary-text"></div>
+
+      <div id="bunk-must-attend" class="bunk-section">
+        <h4 class="bunk-section-title must-attend">MUST ATTEND</h4>
+        <div id="bunk-must-list" class="bunk-list"></div>
+      </div>
+
+      <div id="bunk-safe" class="bunk-section">
+        <h4 class="bunk-section-title safe">SAFE TO BUNK</h4>
+        <div id="bunk-safe-list" class="bunk-list"></div>
+      </div>
+
+      <div id="bunk-unverified" class="bunk-section" style="display:none">
+        <h4 class="bunk-section-title unverified">UNVERIFIED</h4>
+        <div id="bunk-unverified-list" class="bunk-list"></div>
+      </div>
+    </div>
+
+    <div id="view-subjects" class="view" style="display:none">
+      <button id="btn-back-subjects" class="back-btn">&larr; Back</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <h2 class="view-title" style="margin-bottom:0">ALL SUBJECTS</h2>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button id="btn-export-pdf" class="export-btn" title="Export Attendance Report">Export Report (PDF)</button>
+          <span id="subjects-sync-tag" style="font-size:11px;color:var(--text-muted)">Synced</span>
+        </div>
+      </div>
+      <div class="subject-targets-info"
+        style="margin-bottom:14px;padding:10px 12px;background:var(--bg-card);border-radius:var(--radius-sm);border:1px solid var(--border);font-size:12px;color:var(--text-secondary);display:flex;justify-content:space-between">
+        <span>Overall Target: <strong style="color:var(--text-primary)">75%</strong></span>
+        <span>Subject Minimum: <strong style="color:var(--text-primary)">60%</strong></span>
+      </div>
+      <div id="all-subjects-list" class="all-subjects-list">
+
+      </div>
+    </div>
+
+    <div id="view-debug" class="view" style="display:none">
+      <button id="btn-back-debug" class="back-btn">&larr; Back</button>
+      <h2 class="view-title">DEBUG INFO</h2>
+      <div id="debug-content" class="debug-content">
+        <pre id="debug-data">Loading...</pre>
+      </div>
+      <div class="debug-actions">
+        <button id="btn-export" class="action-btn">Export Data</button>
+        <button id="btn-clear" class="action-btn danger">Clear Stored Data</button>
+      </div>
+    </div>
+
+    <div id="view-analytics" class="view" style="display:none">
+      <h2 class="view-title">PERFORMANCE ANALYTICS</h2>
+      <div id="analytics-chart-container" class="analytics-chart-container">
+        <canvas id="analytics-chart" width="380" height="220"></canvas>
+      </div>
+      <div id="analytics-insights" class="analytics-insights">
+
+      </div>
+    </div>
+
+    <div id="view-strategy" class="view" style="display:none">
+      <h2 class="view-title">SEMESTER STRATEGY PLANNER</h2>
+      <div class="strategy-controls">
+        <div class="strategy-field">
+          <label for="strategy-subject">Select Subject</label>
+          <select id="strategy-subject" class="strategy-select"></select>
+        </div>
+        <div class="strategy-field">
+          <label for="strategy-bunks">Classes to Bunk: <strong id="strategy-bunk-count">0</strong></label>
+          <input type="range" id="strategy-bunks" class="strategy-slider" min="0" max="20" value="0">
+        </div>
+      </div>
+      <div id="strategy-results" class="strategy-results">
+        <div class="strategy-result-card">
+          <span class="strategy-label">Current Attendance</span>
+          <span id="strategy-current" class="strategy-value">—</span>
+        </div>
+        <div class="strategy-result-card">
+          <span class="strategy-label">After Bunking</span>
+          <span id="strategy-after" class="strategy-value">—</span>
+        </div>
+        <div class="strategy-result-card">
+          <span class="strategy-label">Classes to Recover</span>
+          <span id="strategy-recover" class="strategy-value">—</span>
+        </div>
+        <div class="strategy-result-card">
+          <span class="strategy-label">Semester Forecast</span>
+          <span id="strategy-forecast" class="strategy-value">—</span>
+        </div>
+      </div>
+      <div id="strategy-verdict" class="strategy-verdict"></div>
+    </div>
+
+    <div id="view-bunk-dates" class="view" style="display:none">
+      <div class="strategy-card">
+        <h3 class="section-title">SEMESTER BUNK PLANNER & DATES</h3>
+        <p class="section-subtitle">Auto-calculated day-wise bunk suggestions across your weekly timetable.</p>
+        <div id="popup-bunk-dates-list" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+          <!-- Rendered dynamically from weeklyBunkPlanner -->
+        </div>
+      </div>
+    </div>
+
+    <div id="view-settings" class="view" style="display:none">
+      <div class="strategy-card">
+        <h3 class="section-title">SETTINGS & DATA RESET</h3>
+        <p class="section-subtitle">Manage your target preferences or reset stored timetable and attendance data.</p>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--text-primary);display:block;margin-bottom:4px;">Target Overall Attendance (%)</label>
+            <input type="number" id="setting-target" value="75" min="50" max="95" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;box-sizing:border-box;">
+          </div>
+          <div style="padding-top:10px;border-top:1px solid var(--border);">
+            <button id="btn-reset-all-data" style="width:100%;background:#dc2626;color:#ffffff;border:none;border-radius:4px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;transition:background 0.15s ease;">
+              Reset All Stored Data
+            </button>
+            <span style="font-size:10px;color:var(--text-muted);display:block;margin-top:4px;text-align:center;">Clears all cached schedule and attendance data to start fresh.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <nav id="nav-bar" class="nav-bar">
+      <button id="nav-plan" class="nav-btn active" data-view="dashboard">
+        <span class="nav-label">Schedule</span>
+      </button>
+      <button id="nav-bunk-dates" class="nav-btn" data-view="bunk-dates">
+        <span class="nav-label">Bunk Dates</span>
+      </button>
+      <button id="nav-analytics" class="nav-btn" data-view="analytics">
+        <span class="nav-label">Analytics</span>
+      </button>
+      <button id="nav-strategy" class="nav-btn" data-view="strategy">
+        <span class="nav-label">Strategy</span>
+      </button>
+      <button id="nav-subjects" class="nav-btn" data-view="subjects">
+        <span class="nav-label">Subjects</span>
+      </button>
+      <button id="nav-settings" class="nav-btn" data-view="settings">
+        <span class="nav-label">Settings</span>
+      </button>
+    </nav>
+  </div>
+
+  <script src="popup.js" type="module"></script>
+</body>
+
+</html>
