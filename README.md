@@ -4,7 +4,7 @@
 
 [![Manifest V3](https://img.shields.io/badge/Chrome%20Extension-Manifest%20V3-blue?style=flat-square&logo=google-chrome)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 [![Version](https://img.shields.io/badge/Version-1.1.0-emerald?style=flat-square)](manifest.json)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary%20%7C%20All%20Rights%20Reserved-red.svg?style=flat-square)](LICENSE)
 [![Zero Backend](https://img.shields.io/badge/Server-100%25%20Local-purple?style=flat-square)](#-privacy--zero-tracking)
 
 ---
@@ -117,12 +117,19 @@ npm run package
 
 ---
 
-## 📄 License
+## ⚖️ Intellectual Property & Copyright Notice
 
-MIT License — free to use, modify, and share. See [LICENSE](LICENSE) for details.
+**Copyright © 2026 Nakul Mundhada. All Rights Reserved.**
+
+This project, its source code, architecture, algorithms, and UI designs are the **exclusive intellectual property of Nakul Mundhada**.
+
+- **Personal Use**: You are free to clone, download, and use this extension locally for your personal academic productivity with the RCOEM / RBU Juno Portal.
+- **Strict Prohibition on Modifications & Derivatives**: You **MAY NOT** modify, edit, fork-and-rebrand, build derivative versions, or tamper with the source code without explicit written permission from the author.
+- **Strict Prohibition on Redistribution**: You **MAY NOT** re-upload, mirror, sell, sublicense, or distribute this extension (partially or in full) to the Chrome Web Store, package managers, or any other public platforms.
+- **Permissions & Collaboration**: To request permission for modifications, institutional integrations, or feature contributions, reach out to the author via GitHub: [@nakul-biovaco](https://github.com/nakul-biovaco).
 
 ---
 
 <p align="center">
-  <b>Built by Nakul Mundhada</b> for the student community of <b>RCOEM / RBU</b>.
+  <b>Designed, Engineered & Authored by Nakul Mundhada</b> for the student community of <b>RCOEM / RBU</b>.
 </p>

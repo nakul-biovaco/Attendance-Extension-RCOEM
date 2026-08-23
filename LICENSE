@@ -1,21 +1,26 @@
-MIT License
+PROPRIETARY & SOURCE-AVAILABLE SOFTWARE LICENSE
 
-Copyright (c) 2026 Nakul Mundhada
+Copyright (c) 2026 Nakul Mundhada. All Rights Reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This software and associated source code, architecture, design assets, and documentation (the "Software") are the exclusive intellectual property of Nakul Mundhada ("Author").
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+TERMS AND CONDITIONS OF USE:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+1. GRANT OF PERSONAL USE:
+You are granted a limited, non-exclusive, non-transferable, revocable license to download, view the source code, and run this Software locally on your personal device solely for personal, non-commercial educational use in conjunction with the RCOEM / RBU Juno student portal.
+
+2. STRICT PROHIBITION ON MODIFICATIONS AND DERIVATIVE WORKS:
+You MAY NOT modify, edit, adapt, transform, alter, reverse-engineer, translate, or build derivative works of this Software, in whole or in part, without the explicit prior written permission and authorization of the Author (Nakul Mundhada).
+
+3. PROHIBITION ON REDISTRIBUTION & RE-HOSTING:
+You MAY NOT redistribute, re-upload, re-publish, mirror, fork-and-rebrand, sublicense, sell, rent, lease, or distribute this Software (or any modified or compiled versions thereof) on any public or private repository, Chrome Web Store, website, or distribution platform without prior written consent from the Author.
+
+4. INTELLECTUAL PROPERTY & OWNERSHIP:
+All title, ownership rights, intellectual property, and copyright in and to the Software remain solely and exclusively with Nakul Mundhada. Any unauthorized reproduction, modification, or distribution constitutes an infringement of copyright law.
+
+5. PERMISSION & INQUIRIES:
+For inquiries, permission requests, or collaborative integration, please contact the author:
+Nakul Mundhada (GitHub: https://github.com/nakul-biovaco).
+
+6. DISCLAIMER OF WARRANTY:
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM THE USE OR MISUSE OF THIS SOFTWARE.
