@@ -1,3 +1,14 @@
+/**
+ * Copyright (c) 2026 Nakul Mundhada. All Rights Reserved.
+ * 
+ * PROPRIETARY & CONFIDENTIAL SOURCE CODE.
+ * This software is the intellectual property of Nakul Mundhada.
+ * Unauthorized modification, redistribution, re-licensing, or commercial
+ * exploitation is strictly prohibited without prior written consent.
+ * 
+ * Author: Nakul Mundhada (https://github.com/nakul-biovaco)
+ */
+
 import { BasePortalAdapter } from './portal-adapter.js';
 import { normalizeSubjectName, normalizeCourseCode, cleanDOMText, parseAttendanceFraction, parseTime, deterministicId } from '../utils/normalizer.js';
 import { getTodayDate, getTodayDayName, parsePortalDate, nowISO } from '../utils/date-utils.js';

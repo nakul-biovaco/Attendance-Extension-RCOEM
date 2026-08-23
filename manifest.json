@@ -3,6 +3,8 @@
   "manifest_version": 3,
   "name": "RCOEM/RBU Operation 75",
   "version": "1.1.0",
+  "author": "Nakul Mundhada",
+  "homepage_url": "https://github.com/nakul-biovaco/Attendance-Extension-RCOEM",
   "description": "A simple attendance companion for RCOEM students to monitor attendance, calculate requirements, and plan their semester smarter.",
   "permissions": [
     "storage",

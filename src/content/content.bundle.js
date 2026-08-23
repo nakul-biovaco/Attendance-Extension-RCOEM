@@ -1,3 +1,4 @@
+/** Copyright (c) 2026 Nakul Mundhada. All Rights Reserved. PROPRIETARY & CONFIDENTIAL. https://github.com/nakul-biovaco/Attendance-Extension-RCOEM */
 (() => {
   // src/adapters/portal-adapter.js
   var BasePortalAdapter = class {
