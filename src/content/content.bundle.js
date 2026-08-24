@@ -243,7 +243,10 @@
       return Boolean(document.body);
     }
     parseSchedule() {
-      const classes = [];
+      const stripClasses = this._parseScheduleFromHomeStrip();
+      if (stripClasses.length > 0) return stripClasses;
+      const transposedClasses = this._parseScheduleFromTransposedTable();
+      if (transposedClasses.length > 0) return transposedClasses;
       const scheduleContainer = this._findScheduleContainer();
       if (scheduleContainer) {
         const parsed = this._parseScheduleFromContainer(scheduleContainer);
@@ -253,7 +256,161 @@
       if (tableParsed.length > 0) return tableParsed;
       const cardParsed = this._parseScheduleFromCards();
       if (cardParsed.length > 0) return cardParsed;
-      return classes;
+      const genericParsed = this._parseScheduleFromGenericDOM();
+      if (genericParsed.length > 0) return genericParsed;
+      return [];
+    }
+    _parseScheduleFromHomeStrip() {
+      const today = getTodayDate();
+      const dayName = getTodayDayName();
+      const headings = this.findElementsByText("today's schedule");
+      for (const heading of headings) {
+        let root = heading.closest(".card, .panel, .widget, .box, div, tr") || heading.parentElement;
+        if (!root) continue;
+        const elementsToScan = [root, root.nextElementSibling, root.parentElement].filter(Boolean);
+        for (const el of elementsToScan) {
+          const tables = el.querySelectorAll("table");
+          for (const table of tables) {
+            const rows = table.querySelectorAll("tbody tr, tr");
+            if (rows.length >= 2) {
+              for (let r = 0; r < rows.length - 1; r++) {
+                const row1Cells = rows[r].querySelectorAll("td, th");
+                const row2Cells = rows[r + 1].querySelectorAll("td, th");
+                const minLen = Math.min(row1Cells.length, row2Cells.length);
+                if (minLen === 0) continue;
+                const classes = [];
+                for (let c = 0; c < minLen; c++) {
+                  const timeText = cleanDOMText(row1Cells[c].innerText || "");
+                  const subText = cleanDOMText(row2Cells[c].innerText || "");
+                  const timeMatch = timeText.match(/(\d{1,2}[:.]\d{2}\s*(?:AM|PM|am|pm)?)\s*(?:[-–—to]+\s*(\d{1,2}[:.]\d{2}\s*(?:AM|PM|am|pm)?))?/i);
+                  if (timeMatch && subText && subText !== "-" && subText.length >= 2 && !this._isSubjectBlacklisted(subText)) {
+                    classes.push({
+                      id: deterministicId(today + subText + (timeMatch[1] || "")),
+                      subjectName: subText.trim(),
+                      normalizedName: normalizeSubjectName(subText),
+                      courseCode: null,
+                      date: today,
+                      dayOfWeek: dayName,
+                      startTime: parseTime(timeMatch[1]),
+                      endTime: timeMatch[2] ? parseTime(timeMatch[2]) : null,
+                      classType: this._detectClassType(subText),
+                      location: null,
+                      faculty: null,
+                      matchConfidence: 0,
+                      sync: {
+                        source: "Juno Student Home Strip",
+                        syncedAt: nowISO(),
+                        confidence: 1
+                      }
+                    });
+                  }
+                }
+                if (classes.length > 0) return classes;
+              }
+            }
+          }
+        }
+      }
+      return [];
+    }
+    _parseScheduleFromTransposedTable() {
+      const today = getTodayDate();
+      const dayName = getTodayDayName();
+      const tables = document.querySelectorAll("table");
+      for (const table of tables) {
+        const rows = table.querySelectorAll("tbody tr, tr");
+        if (rows.length < 2) continue;
+        for (let r = 0; r < rows.length - 1; r++) {
+          const row1Cells = rows[r].querySelectorAll("td, th");
+          const row2Cells = rows[r + 1].querySelectorAll("td, th");
+          if (row1Cells.length === 0 || row2Cells.length === 0) continue;
+          const row1HasTimes = Array.from(row1Cells).some((c) => /(\d{1,2}[:.]\d{2}\s*(?:AM|PM|am|pm)?)/.test(c.innerText || ""));
+          const row2HasTimes = Array.from(row2Cells).some((c) => /(\d{1,2}[:.]\d{2}\s*(?:AM|PM|am|pm)?)/.test(c.innerText || ""));
+          if (row1HasTimes && !row2HasTimes) {
+            const classes = [];
+            const minLen = Math.min(row1Cells.length, row2Cells.length);
+            for (let c = 0; c < minLen; c++) {
+              const timeText = cleanDOMText(row1Cells[c].innerText || "");
+              const subText = cleanDOMText(row2Cells[c].innerText || "");
+              const timeMatch = timeText.match(/(\d{1,2}[:.]\d{2}\s*(?:AM|PM|am|pm)?)\s*(?:[-–—to]+\s*(\d{1,2}[:.]\d{2}\s*(?:AM|PM|am|pm)?))?/i);
+              if (!timeMatch) continue;
+              if (!subText || subText === "-" || subText.length < 2) continue;
+              if (this._isSubjectBlacklisted(subText)) continue;
+              const startTime = parseTime(timeMatch[1]);
+              const endTime = timeMatch[2] ? parseTime(timeMatch[2]) : null;
+              classes.push({
+                id: deterministicId(today + subText + (startTime || "")),
+                subjectName: subText.trim(),
+                normalizedName: normalizeSubjectName(subText),
+                courseCode: null,
+                date: today,
+                dayOfWeek: dayName,
+                startTime,
+                endTime,
+                classType: this._detectClassType(subText),
+                location: null,
+                faculty: null,
+                matchConfidence: 0,
+                sync: {
+                  source: "Juno Transposed Table",
+                  syncedAt: nowISO(),
+                  confidence: 1
+                }
+              });
+            }
+            if (classes.length > 0) return classes;
+          }
+        }
+      }
+      return [];
+    }
+    _parseScheduleFromGenericDOM() {
+      const today = getTodayDate();
+      const dayName = getTodayDayName();
+      const headings = this.findElementsByText("today's schedule");
+      for (const heading of headings) {
+        let root = heading.closest(".card, .panel, .widget, div") || heading.parentElement;
+        if (!root) continue;
+        const timeElements = Array.from(root.querySelectorAll("*")).filter((el) => {
+          const t = (el.innerText || "").trim();
+          return /^(\d{1,2}[:.]\d{2}\s*(?:AM|PM|am|pm)?)\s*[-–—to]+\s*(\d{1,2}[:.]\d{2}\s*(?:AM|PM|am|pm)?)$/i.test(t);
+        });
+        if (timeElements.length > 0) {
+          const classes = [];
+          for (const tEl of timeElements) {
+            const timeText = tEl.innerText.trim();
+            const timeMatch = timeText.match(/(\d{1,2}[:.]\d{2}\s*(?:AM|PM|am|pm)?)\s*[-–—to]+\s*(\d{1,2}[:.]\d{2}\s*(?:AM|PM|am|pm)?)/i);
+            if (!timeMatch) continue;
+            let subEl = tEl.nextElementSibling || (tEl.parentElement ? tEl.parentElement.querySelector('a, strong, span:not([class*="time"]), div:not([class*="time"])') : null);
+            let subText = subEl ? cleanDOMText(subEl.innerText) : "";
+            if (!subText || subText === timeText) {
+              const parentCells = tEl.closest("td, div");
+              if (parentCells && parentCells.nextElementSibling) {
+                subText = cleanDOMText(parentCells.nextElementSibling.innerText);
+              }
+            }
+            if (subText && subText.length >= 2 && !this._isSubjectBlacklisted(subText)) {
+              classes.push({
+                id: deterministicId(today + subText + timeMatch[1]),
+                subjectName: subText.trim(),
+                normalizedName: normalizeSubjectName(subText),
+                courseCode: null,
+                date: today,
+                dayOfWeek: dayName,
+                startTime: parseTime(timeMatch[1]),
+                endTime: timeMatch[2] ? parseTime(timeMatch[2]) : null,
+                classType: this._detectClassType(subText),
+                location: null,
+                faculty: null,
+                matchConfidence: 0,
+                sync: { source: "Juno Generic DOM Scanner", syncedAt: nowISO(), confidence: 1 }
+              });
+            }
+          }
+          if (classes.length > 0) return classes;
+        }
+      }
+      return [];
     }
     _findScheduleContainer() {
       const headings = this.findElementsByText("today's schedule");

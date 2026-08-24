@@ -16,7 +16,8 @@ import { calculateOverall } from '../engine/attendance-calculator.js';
 import { projectAllSubjects } from '../engine/projection-engine.js';
 import { generateTodayPlan, generateBunkSummary, generateRecommendations, generateWeeklyBunkPlanner, generateDateWiseBunkPlanner } from '../engine/recommendation-engine.js';
 import { findHighestRisk, riskSummary } from '../engine/risk-engine.js';
-import { getTodayDate, nowISO, getDynamicSemesterEndDate } from '../utils/date-utils.js';
+import { getTodayDate, getTodayDayName, nowISO, getDynamicSemesterEndDate } from '../utils/date-utils.js';
+import { deterministicId, normalizeSubjectName } from '../utils/normalizer.js';
 
 chrome.runtime.onInstalled.addListener(async (details) => {
   console.log('[AI Background] Extension installed:', details.reason);
@@ -129,10 +130,45 @@ async function handleMessage(message, sender) {
 }
 
 async function handleScheduleParsed(data) {
-  const { classes } = data;
+  let { classes } = data || {};
   const today = getTodayDate();
+  const dayName = getTodayDayName();
 
-  await storage.saveTodaySchedule(classes, today);
+  const weeklySchedule = await storage.getWeeklySchedule();
+
+  if ((!classes || classes.length === 0) && weeklySchedule) {
+    if (weeklySchedule.dateWiseSchedule && weeklySchedule.dateWiseSchedule[today]) {
+      classes = weeklySchedule.dateWiseSchedule[today].map(c => ({
+        id: deterministicId(today + c.subjectName + (c.startTime || '')),
+        subjectName: c.subjectName,
+        normalizedName: normalizeSubjectName(c.subjectName),
+        courseCode: c.courseCode || null,
+        date: today,
+        dayOfWeek: dayName,
+        startTime: c.startTime,
+        endTime: c.endTime,
+        faculty: c.facultyName,
+        matchConfidence: 0,
+        sync: { source: 'Synced Timetable Fallback', syncedAt: nowISO(), confidence: 0.95 }
+      }));
+    } else if (weeklySchedule.days && weeklySchedule.days[dayName]) {
+      classes = weeklySchedule.days[dayName].map(c => ({
+        id: deterministicId(today + c.subjectName + (c.startTime || '')),
+        subjectName: c.subjectName,
+        normalizedName: normalizeSubjectName(c.subjectName),
+        courseCode: c.courseCode || null,
+        date: today,
+        dayOfWeek: dayName,
+        startTime: c.startTime,
+        endTime: c.endTime,
+        faculty: c.facultyName,
+        matchConfidence: 0,
+        sync: { source: 'Synced Timetable Fallback', syncedAt: nowISO(), confidence: 0.95 }
+      }));
+    }
+  }
+
+  await storage.saveTodaySchedule(classes || [], today);
   await storage.saveExtensionState(ExtensionState.SCHEDULE_DETECTED);
 
   const subjectsData = await storage.getSubjects();
@@ -143,7 +179,7 @@ async function handleScheduleParsed(data) {
 
   const prefs = await storage.getPreferences();
   const matchCache = await storage.getMatchCache();
-  const matches = matchSubjects(classes, subjectsData.subjects, prefs.aliasMap, matchCache);
+  const matches = matchSubjects(classes || [], subjectsData.subjects, prefs.aliasMap, matchCache);
 
   const newCache = {};
   for (const match of matches) {
@@ -154,8 +190,6 @@ async function handleScheduleParsed(data) {
   if (Object.keys(newCache).length > 0) {
     await storage.saveMatchCache(newCache);
   }
-
-  const weeklySchedule = await storage.getWeeklySchedule();
 
   const matchedClasses = matches.map(m => ({
     classInstance: m.scheduleClass,
