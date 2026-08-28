@@ -1,135 +1,149 @@
-# 🚀 RCOEM Operation 75
+# RCOEM Operation 75
 
-> **The ultimate attendance companion & smart bunk planner built for RCOEM / RBU students.**
+> An intelligent attendance companion and dynamic bunk planner designed for students using the Juno Campus portal at RCOEM / RBU.
 
 [![Manifest V3](https://img.shields.io/badge/Chrome%20Extension-Manifest%20V3-blue?style=flat-square&logo=google-chrome)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 [![Version](https://img.shields.io/badge/Version-1.1.0-emerald?style=flat-square)](manifest.json)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary%20%7C%20All%20Rights%20Reserved-red.svg?style=flat-square)](LICENSE)
-[![Zero Backend](https://img.shields.io/badge/Server-100%25%20Local-purple?style=flat-square)](#-privacy--zero-tracking)
+[![Zero Backend](https://img.shields.io/badge/Server-100%25%20Local-purple?style=flat-square)](#privacy--local-execution)
 
 ---
 
-## 💡 Why I Built This
+## Why I Built This
 
-If you're studying at **RCOEM / RBU**, you already know the pain of maintaining that **75% attendance criteria**. 
+Maintaining the mandatory 75% attendance criteria throughout an engineering semester is an everyday challenge. Between lab practicals, theory lectures, and changing schedules, calculating attendance fractions by hand or tracking them across separate spreadsheets gets tedious very quickly.
 
-Every single semester, it's the same story:
-- Opening Juno Campus portal, calculating fractions in your head (`7/18 = 38.8%`, `14/20 = 70.0%`).
-- Wondering: *"If I bunk DSA on Wednesday, will my attendance crash?"* or *"How many consecutive DBMS lectures do I need to attend to hit 75%?"*.
-- Staring at cryptic timetable short codes like `DSA`, `DBMS`, `OS`, `AI`, `SE` without knowing which full subject or faculty they belong to.
+The default portal interface presents raw lecture codes and static historical figures without giving students any predictive visibility into their upcoming weeks. Questions like *"If I miss a lecture on Wednesday, will my overall percentage drop below the threshold?"* or *"How many consecutive classes do I need to attend to recover from a dip?"* typically require manual mental math.
 
-Doing manual mental math and spreadsheets between classes was frustrating. So I sat down and built **Operation 75** from scratch — a clean, lightweight, client-side Chrome Extension that injects smart insights, dynamic future predictions, and safe bunk dates directly into the Juno portal.
+I built Operation 75 as a lightweight, privacy-focused Chrome Extension to solve this directly inside the Juno portal. It calculates future attendance trajectories, highlights safe bunk opportunities date-by-date, and resolves shorthand timetable codes into full course names in real time.
 
 ---
 
-## ✨ Features That Actually Save Your Semester
+## Key Capabilities
 
-### 1. ⚡ 100% Pure Dynamic Portal Resolution (Zero Hardcoded Maps)
-- I didn't want any lazy hardcoded subject maps that break across semesters or different engineering branches (CSE, IT, ECE, ME, CE, EE, etc.).
-- The extension parses raw timetable cells dynamically in real-time, stripping conjunctions and prepositions (`and`, `&`, `of`, `the`, `in`, `for`, `with`) to resolve initials into full course names:
-  - `DSA` $\rightarrow$ **Data Structures & Algorithms**
-  - `DBMS` $\rightarrow$ **Database Management Systems**
-  - `OS` $\rightarrow$ **Operating Systems** / `OS (P)` $\rightarrow$ **Operating Systems Lab**
-  - `AI` $\rightarrow$ **Artificial Intelligence**
-  - `SE` $\rightarrow$ **Software Engineering**
-  - `DCN` $\rightarrow$ **Data Communication & Networks**
-- Built-in substring collision shield ensures short codes don't wrongly latch onto internal word substrings.
+### 1. Pure Dynamic Portal Resolution
+The extension does not rely on hardcoded dictionaries, pre-configured course lists, or static departmental mappings. It parses live table structures directly from the portal DOM, applying dynamic tokenization and initial extraction while ignoring common prepositions and conjunctions (such as *and*, *&*, *of*, *the*, *in*, *for*, *with*).
 
-### 2. 📈 Real-Time Future Attendance Trajectory
-- In your monthly timetable, it doesn't just slap a static attendance percentage on every row.
-- It calculates a **progressive cumulative forecast** across upcoming calendar dates:
-  - As you attend lecture-by-lecture, your forecasted percentage climbs dynamically:
-    - `Data Structures & Algorithms` (Base: `38.9%`) $\rightarrow$ Lecture 1: `MUST ATTEND (42.1%)` $\rightarrow$ Lecture 2: `MUST ATTEND (45.0%)` $\rightarrow$ Lecture 3: `MUST ATTEND (47.6%)`...
-  - The moment you cross 75%, it automatically transitions to **`TARGET ACHIEVED (75.0%)`** and then calculates **`SAFE TO BUNK (1 safe • 76.0%)`**!
+Examples of automated resolution across branches:
+- `DSA` $\rightarrow$ **Data Structures & Algorithms**
+- `DBMS` $\rightarrow$ **Database Management Systems**
+- `OS` $\rightarrow$ **Operating Systems** / `OS (P)` $\rightarrow$ **Operating Systems Lab**
+- `AI` $\rightarrow$ **Artificial Intelligence**
+- `SE` $\rightarrow$ **Software Engineering**
+- `DCN` $\rightarrow$ **Data Communication & Networks**
 
-### 3. 📅 Date-Wise Semester Bunk Planner
-- Generates clean, calendar date cards (`Sep 26, 2026 (Saturday)`, etc.) across your timetable.
-- Tells you straight up whether an upcoming day is:
-  - 🟢 **Full Safe Bunk Day** (All classes are safe to skip).
-  - 🟡 **Partial Bunk Day** (Some classes safe, some must attend).
-  - 🔴 **Compulsory Attendance Day** (Must be in class).
+A substring collision guard prevents short abbreviations from false-matching internal character sequences within unrelated course names.
 
-### 4. 🎨 Juno-Native Design System
-- Built to blend in seamlessly with Juno's actual design language.
-- Features Juno's exact **Emerald Teal (`#00a884`) active slider underline**, deep navy typography (`#02529c`), and clean border aesthetics.
+### 2. Real-Time Progressive Attendance Trajectory
+Rather than displaying a static percentage on every timetable row, the extension runs a cumulative simulation across your upcoming calendar lectures:
 
-### 5. 🔒 Multi-User Safe & Reset Anytime
-- Sharing a laptop with friends? The extension detects student account changes and purges cached session data instantly to prevent data cross-contamination.
-- Added a **"Reset All Stored Data"** button in settings so you can start fresh anytime.
+$$\text{Projected \%} = \left(\frac{\text{Attended} + k}{\text{Conducted} + k}\right) \times 100$$
 
----
+As you progress through your schedule, each upcoming class displays your exact forecasted standing:
+- `Data Structures & Algorithms` (Baseline: `38.9%`) $\rightarrow$ Class 1: `MUST ATTEND (42.1%)` $\rightarrow$ Class 2: `MUST ATTEND (45.0%)` $\rightarrow$ Class 3: `MUST ATTEND (47.6%)`...
+- Once attendance crosses the 75% mark, the badge dynamically transitions to `TARGET ACHIEVED` followed by the exact count of available safe bunks.
 
-## 🛠️ How I Built It (Tech Stack)
+### 3. Date-Wise Semester Bunk Planner
+The planner evaluates your weekly schedule against current subject standing to generate date-wise recommendations:
+- **Full Safe Bunk Day**: All scheduled lectures for the date can be missed without breaching target thresholds.
+- **Partial Bunk Day**: Certain subjects require attendance, while others have sufficient buffer.
+- **Compulsory Attendance Day**: All lectures must be attended to maintain or recover required percentages.
 
-- **Frontend**: Vanilla JavaScript (ES Modules), HTML5, CSS3.
-- **Platform**: Chrome Extensions (Manifest V3).
-- **Bundling**: `esbuild` (Ultra-fast, zero bloat, ~114 KB bundle).
-- **Architecture**:
-  - `juno-adapter.js`: Resilient DOM scraper for Juno portal tables.
-  - `subject-matcher.js`: Acronym generator and token matcher.
-  - `schedule-injector.js`: In-page live timetable enhancer & real-time trajectory simulator.
-  - `recommendation-engine.js`: Statistical attendance recovery math and date-wise bunk engine.
-  - `service-worker.js`: Background orchestration and local cache sync.
+### 4. Juno-Aligned Interface Design
+The user interface follows the design principles of the Juno Campus portal. It incorporates the signature emerald teal (`#00a884`) active slider indicator, deep navy typography (`#02529c`), and clean border treatments so the extension feels like an organic, built-in feature of the portal.
+
+### 5. Multi-User Isolation & Data Privacy
+All data is stored exclusively on the client machine using `chrome.storage.local`. When a student logs out or switches accounts on a shared workstation, the extension detects the session change and immediately purges local caches to prevent cross-profile data leakage.
 
 ---
 
-## 📦 How to Install (Takes 30 Seconds)
+## Engineering & Architecture
 
-1. Clone or download this repo:
+- **Core Technologies**: Vanilla JavaScript (ES Modules), HTML5, CSS3.
+- **Extension Architecture**: Manifest V3 compliant, Service Worker background orchestration, DOM MutationObserver content scripts.
+- **Build System**: `esbuild` for zero-overhead bundle optimization (~114 KB distribution).
+
+```
+src/
+├── adapters/
+│   └── juno-adapter.js          # Resilient DOM parsing for timetable and ledger tables
+├── background/
+│   └── service-worker.js        # Background state synchronization and lifecycle events
+├── content/
+│   ├── main.js                  # Content script initialization and page observers
+│   ├── schedule-injector.js     # Timetable enhancement and trajectory simulation
+│   └── subject-matcher.js       # Dynamic acronym tokenizer and matching engine
+├── engine/
+│   ├── attendance-calculator.js # Core mathematical formulas and margin calculations
+│   └── recommendation-engine.js # Daily decision planner and date-wise bunk logic
+├── popup/
+│   ├── popup.html               # Popup view structure
+│   ├── popup.css                # Juno-aligned styles and responsive slider
+│   └── popup.js                 # Reactive popup state management
+└── utils/
+    ├── date-utils.js            # Calendar parsing and semester timeline math
+    └── normalizer.js            # String sanitization and deterministic hashing
+```
+
+---
+
+## Installation & Setup
+
+1. Clone or download this repository:
    ```bash
-   git clone https://github.com/your-username/rcoem-operation-75.git
+   git clone https://github.com/nakul-biovaco/Attendance-Extension-RCOEM.git
    ```
-2. Open Google Chrome and go to:
+2. Open Google Chrome and navigate to:
    ```
    chrome://extensions/
    ```
-3. Turn on **Developer mode** (top-right toggle).
-4. Click **Load unpacked** and select this folder.
-5. Log in to [rcoem.in](https://rcoem.in) — your timetable, dashboard, and attendance will instantly light up with Operation 75!
+3. Enable **Developer mode** using the toggle in the top-right corner.
+4. Click **Load unpacked** and select the `attendance-insights` directory.
+5. Navigate to [rcoem.in](https://rcoem.in) and log in — your schedule, timetable, and attendance pages will automatically display Operation 75 insights.
 
 ---
 
-## 💻 Developer Commands
+## Development & Build
 
-If you want to tweak or contribute to the code:
+To modify or build the project locally:
 
 ```bash
-# Install dependencies
+# Install development dependencies
 npm install
 
-# Build the content bundle
+# Compile the content bundle
 npm run build
 
-# Watch mode for live dev
+# Watch mode for active development
 npm run watch
 
-# Create release zip
+# Package into a release archive
 npm run package
 ```
 
 ---
 
-## 🛡️ Privacy & Zero Tracking
+## Privacy & Local Execution
 
-- **100% Local**: No remote servers, no Google Analytics, no third-party APIs.
-- **Zero Credentials Access**: Does not touch or store your passwords.
-- All calculations happen in-memory and in your browser's `chrome.storage.local`.
+- **Zero Remote Communication**: No telemetry, analytics, or external API calls.
+- **Zero Credential Access**: The extension does not intercept, read, or transmit student login credentials.
+- All computations and schedule caches remain strictly inside your browser environment.
 
 ---
 
-## ⚖️ Intellectual Property & Copyright Notice
+## Intellectual Property & Copyright Notice
 
-**Copyright © 2026 Nakul Mundhada. All Rights Reserved.**
+**Copyright (c) 2026 Nakul Mundhada. All Rights Reserved.**
 
-This project, its source code, architecture, algorithms, and UI designs are the **exclusive intellectual property of Nakul Mundhada**.
+This project, its source code, architecture, algorithms, and interface designs are the exclusive intellectual property of **Nakul Mundhada**.
 
-- **Personal Use**: You are free to clone, download, and use this extension locally for your personal academic productivity with the RCOEM / RBU Juno Portal.
-- **Strict Prohibition on Modifications & Derivatives**: You **MAY NOT** modify, edit, fork-and-rebrand, build derivative versions, or tamper with the source code without explicit written permission from the author.
-- **Strict Prohibition on Redistribution**: You **MAY NOT** re-upload, mirror, sell, sublicense, or distribute this extension (partially or in full) to the Chrome Web Store, package managers, or any other public platforms.
-- **Permissions & Collaboration**: To request permission for modifications, institutional integrations, or feature contributions, reach out to the author via GitHub: [@nakul-biovaco](https://github.com/nakul-biovaco).
+- **Personal Use**: You may clone, download, and execute this extension locally for personal academic productivity with the RCOEM / RBU Juno Portal.
+- **Prohibition on Modifications & Derivatives**: Modifying, altering, reverse-engineering, or creating derivative versions of this software without prior written consent is strictly prohibited.
+- **Prohibition on Redistribution**: Re-uploading, mirroring, distributing, sublicensing, or publishing this extension on third-party platforms or the Chrome Web Store without authorization is prohibited.
+- **Inquiries**: For permissions, institutional deployments, or feature collaboration, contact the author via GitHub: [@nakul-biovaco](https://github.com/nakul-biovaco).
 
 ---
 
 <p align="center">
-  <b>Designed, Engineered & Authored by Nakul Mundhada</b> for the student community of <b>RCOEM / RBU</b>.
+  Designed and engineered by <b>Nakul Mundhada</b> for the student community of <b>RCOEM / RBU</b>.
 </p>
