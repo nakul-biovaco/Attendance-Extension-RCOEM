@@ -1,67 +1,64 @@
 # RCOEM Operation 75
 
-> An intelligent attendance companion and dynamic bunk planner designed for students using the Juno Campus portal at RCOEM / RBU.
+> An attendance companion for the Juno Campus portal at RCOEM/RBU — built to answer the one question every engineering student keeps doing mental math over: *"Can I actually afford to skip this class?"*
 
 [![Manifest V3](https://img.shields.io/badge/Chrome%20Extension-Manifest%20V3-blue?style=flat-square&logo=google-chrome)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 [![Version](https://img.shields.io/badge/Version-1.1.0-emerald?style=flat-square)](manifest.json)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary%20%7C%20All%20Rights%20Reserved-red.svg?style=flat-square)](LICENSE)
-[![Zero Backend](https://img.shields.io/badge/Server-100%25%20Local-purple?style=flat-square)](#privacy--local-execution)
+[![Zero Backend](https://img.shields.io/badge/Server-100%25%20Local-purple?style=flat-square)](#privacy)
 
 ---
 
-## Why I Built This
+## Why this exists
 
-Maintaining the mandatory 75% attendance criteria throughout an engineering semester is an everyday challenge. Between lab practicals, theory lectures, and changing schedules, calculating attendance fractions by hand or tracking them across separate spreadsheets gets tedious very quickly.
+75% attendance is a hard line at RCOEM, and the Juno portal doesn't make it easy to live with. It shows you where you stand today, in raw lecture codes, and stops there. It won't tell you whether missing Wednesday's lecture drops you below the cutoff, or how many classes in a row you'd need to sit through to climb back out of a hole. That math falls on the student — usually done in a rush, on a phone, between classes.
 
-The default portal interface presents raw lecture codes and static historical figures without giving students any predictive visibility into their upcoming weeks. Questions like *"If I miss a lecture on Wednesday, will my overall percentage drop below the threshold?"* or *"How many consecutive classes do I need to attend to recover from a dip?"* typically require manual mental math.
-
-I built Operation 75 as a lightweight, privacy-focused Chrome Extension to solve this directly inside the Juno portal. It calculates future attendance trajectories, highlights safe bunk opportunities date-by-date, and resolves shorthand timetable codes into full course names in real time.
+Operation 75 does that math for you, inside the portal itself. It projects where your attendance is headed, flags which days you can actually afford to skip, and turns cryptic timetable shorthand into names you don't have to squint at.
 
 ---
 
-## Key Capabilities
+## What it actually does
 
-### 1. Pure Dynamic Portal Resolution
-The extension does not rely on hardcoded dictionaries, pre-configured course lists, or static departmental mappings. It parses live table structures directly from the portal DOM, applying dynamic tokenization and initial extraction while ignoring common prepositions and conjunctions (such as *and*, *&*, *of*, *the*, *in*, *for*, *with*).
+### 1. Reads the portal, not a hardcoded list
+No dictionary of course codes shipped with the extension — it parses the live timetable DOM and works out what DSA, DBMS, OS (P) etc. mean on the fly, tokenizing and matching against the full course name while ignoring filler words like *and*, *of*, *the*, *in*, *for*. There's also a guard against short codes false-matching inside unrelated course names, since that's an easy way to get a wrong resolution.
 
-Examples of automated resolution across branches:
+A few examples of what it resolves:
 - `DSA` $\rightarrow$ **Data Structures & Algorithms**
 - `DBMS` $\rightarrow$ **Database Management Systems**
-- `OS` $\rightarrow$ **Operating Systems** / `OS (P)` $\rightarrow$ **Operating Systems Lab**
+- `OS` $\rightarrow$ **Operating Systems**, `OS (P)` $\rightarrow$ **Operating Systems Lab**
 - `AI` $\rightarrow$ **Artificial Intelligence**
 - `SE` $\rightarrow$ **Software Engineering**
 - `DCN` $\rightarrow$ **Data Communication & Networks**
 
-A substring collision guard prevents short abbreviations from false-matching internal character sequences within unrelated course names.
-
-### 2. Real-Time Progressive Attendance Trajectory
-Rather than displaying a static percentage on every timetable row, the extension runs a cumulative simulation across your upcoming calendar lectures:
+### 2. Projects your attendance forward, lecture by lecture
+Instead of one static percentage, it simulates your standing across every upcoming class using:
 
 $$\text{Projected \%} = \left(\frac{\text{Attended} + k}{\text{Conducted} + k}\right) \times 100$$
 
-As you progress through your schedule, each upcoming class displays your exact forecasted standing:
-- `Data Structures & Algorithms` (Baseline: `38.9%`) $\rightarrow$ Class 1: `MUST ATTEND (42.1%)` $\rightarrow$ Class 2: `MUST ATTEND (45.0%)` $\rightarrow$ Class 3: `MUST ATTEND (47.6%)`...
-- Once attendance crosses the 75% mark, the badge dynamically transitions to `TARGET ACHIEVED` followed by the exact count of available safe bunks.
+So a subject sitting at 38.9% might show:
+$$\text{MUST ATTEND (42.1\%)} \rightarrow \text{MUST ATTEND (45.0\%)} \rightarrow \text{MUST ATTEND (47.6\%)} \dots$$
 
-### 3. Date-Wise Semester Bunk Planner
-The planner evaluates your weekly schedule against current subject standing to generate date-wise recommendations:
-- **Full Safe Bunk Day**: All scheduled lectures for the date can be missed without breaching target thresholds.
-- **Partial Bunk Day**: Certain subjects require attendance, while others have sufficient buffer.
-- **Compulsory Attendance Day**: All lectures must be attended to maintain or recover required percentages.
+and once you cross 75%, the badge switches to `TARGET ACHIEVED`, along with exactly how many bunks you've earned.
 
-### 4. Juno-Aligned Interface Design
-The user interface follows the design principles of the Juno Campus portal. It incorporates the signature emerald teal (`#00a884`) active slider indicator, deep navy typography (`#02529c`), and clean border treatments so the extension feels like an organic, built-in feature of the portal.
+### 3. A day-by-day bunk planner
+For every date in the semester, it weighs your current standing against your schedule and tells you what kind of day it is:
+- **Full Safe Bunk Day** — skip everything, you're covered.
+- **Partial Bunk Day** — some subjects have buffer, others don't.
+- **Compulsory Attendance Day** — no room to miss anything today.
 
-### 5. Multi-User Isolation & Data Privacy
-All data is stored exclusively on the client machine using `chrome.storage.local`. When a student logs out or switches accounts on a shared workstation, the extension detects the session change and immediately purges local caches to prevent cross-profile data leakage.
+### 4. Looks like it belongs in Juno
+Same emerald teal (`#00a884`) accents, same navy typography (`#02529c`), same border treatment as the portal — so it reads as a built-in feature rather than a bolted-on extension.
+
+### 5. Doesn't leak across accounts
+Everything lives in `chrome.storage.local`, nothing leaves the browser, and on a shared machine the extension detects a login/logout and wipes the cache so the next student doesn't see your data.
 
 ---
 
-## Engineering & Architecture
+## How it's built
 
-- **Core Technologies**: Vanilla JavaScript (ES Modules), HTML5, CSS3.
-- **Extension Architecture**: Manifest V3 compliant, Service Worker background orchestration, DOM MutationObserver content scripts.
-- **Build System**: `esbuild` for zero-overhead bundle optimization (~114 KB distribution).
+- **Stack**: Vanilla JavaScript (ES Modules), HTML5, CSS3 — no framework overhead.
+- **Extension architecture**: Manifest V3, a service-worker background script, and content scripts driven by a DOM MutationObserver (the portal doesn't fire clean events, so this was the reliable way to catch table updates).
+- **Build**: `esbuild`, keeping the bundle around ~114 KB.
 
 ```
 src/
@@ -87,63 +84,61 @@ src/
 
 ---
 
-## Installation & Setup
+## Getting it running
 
-1. Clone or download this repository:
+1. Clone the repo:
    ```bash
    git clone https://github.com/nakul-biovaco/Attendance-Extension-RCOEM.git
    ```
-2. Open Google Chrome and navigate to:
+2. Open Chrome and go to:
    ```
    chrome://extensions/
    ```
-3. Enable **Developer mode** using the toggle in the top-right corner.
-4. Click **Load unpacked** and select the `attendance-insights` directory.
-5. Navigate to [rcoem.in](https://rcoem.in) and log in — your schedule, timetable, and attendance pages will automatically display Operation 75 insights.
+3. Flip on **Developer mode** (top-right corner).
+4. Click **Load unpacked**, and point it at the `attendance-insights` folder.
+5. Log into [rcoem.in](https://rcoem.in/) as usual — your timetable and attendance pages should now show Operation 75's overlays automatically.
 
 ---
 
-## Development & Build
-
-To modify or build the project locally:
+## Working on it locally
 
 ```bash
-# Install development dependencies
+# install dependencies
 npm install
 
-# Compile the content bundle
+# build the content bundle
 npm run build
 
-# Watch mode for active development
+# watch mode while developing
 npm run watch
 
-# Package into a release archive
+# package a release archive
 npm run package
 ```
 
 ---
 
-## Privacy & Local Execution
+## Privacy
 
-- **Zero Remote Communication**: No telemetry, analytics, or external API calls.
-- **Zero Credential Access**: The extension does not intercept, read, or transmit student login credentials.
-- All computations and schedule caches remain strictly inside your browser environment.
+- No telemetry, no analytics, no calls to any external API.
+- Never touches your login credentials.
+- Every calculation and cached schedule stays inside your browser — nothing is sent anywhere.
 
 ---
 
-## Intellectual Property & Copyright Notice
+## Copyright & usage terms
 
-**Copyright (c) 2026 Nakul Mundhada. All Rights Reserved.**
+**Copyright (c) 2026 Nakul Mundhada. All rights reserved.**
 
-This project, its source code, architecture, algorithms, and interface designs are the exclusive intellectual property of **Nakul Mundhada**.
+This project — code, architecture, algorithms, and interface design — belongs to Nakul Mundhada.
 
-- **Personal Use**: You may clone, download, and execute this extension locally for personal academic productivity with the RCOEM / RBU Juno Portal.
-- **Prohibition on Modifications & Derivatives**: Modifying, altering, reverse-engineering, or creating derivative versions of this software without prior written consent is strictly prohibited.
-- **Prohibition on Redistribution**: Re-uploading, mirroring, distributing, sublicensing, or publishing this extension on third-party platforms or the Chrome Web Store without authorization is prohibited.
-- **Inquiries**: For permissions, institutional deployments, or feature collaboration, contact the author via GitHub: [@nakul-biovaco](https://github.com/nakul-biovaco).
+- **Personal use**: fine to clone and run locally for your own attendance tracking on the RCOEM/RBU Juno portal.
+- **No modification or derivatives**: don't alter, reverse-engineer, or build derivative versions without written permission.
+- **No redistribution**: don't re-upload, mirror, or publish this on the Chrome Web Store or anywhere else without authorization.
+- **Want to collaborate or deploy this at your own institution?** Reach out via GitHub: [@nakul-biovaco](https://github.com/nakul-biovaco).
 
 ---
 
 <p align="center">
-  Designed and engineered by <b>Nakul Mundhada</b> for the student community of <b>RCOEM / RBU</b>.
+  Built by <b>Nakul Mundhada</b> for RCOEM/RBU students who are tired of doing attendance math in their heads.
 </p>
