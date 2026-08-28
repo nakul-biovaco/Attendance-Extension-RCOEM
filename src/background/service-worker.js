@@ -1,18 +1,9 @@
-/**
- * Copyright (c) 2026 Nakul Mundhada. All Rights Reserved.
- * 
- * PROPRIETARY & CONFIDENTIAL SOURCE CODE.
- * This software is the intellectual property of Nakul Mundhada.
- * Unauthorized modification, redistribution, re-licensing, or commercial
- * exploitation is strictly prohibited without prior written consent.
- * 
- * Author: Nakul Mundhada (https://github.com/nakul-biovaco)
- */
+// (c) 2026 Nakul Mundhada. All rights reserved.
 
 import { MessageType, ExtensionState, DEFAULT_PREFERENCES } from '../types/models.js';
 import * as storage from '../storage/chrome-storage.js';
 import { matchSubjects } from '../content/subject-matcher.js';
-import { calculateOverall } from '../engine/attendance-calculator.js';
+import { calculateOverall, whatIfAttend, whatIfBunk } from '../engine/attendance-calculator.js';
 import { projectAllSubjects } from '../engine/projection-engine.js';
 import { generateTodayPlan, generateBunkSummary, generateRecommendations, generateWeeklyBunkPlanner, generateDateWiseBunkPlanner } from '../engine/recommendation-engine.js';
 import { findHighestRisk, riskSummary } from '../engine/risk-engine.js';
@@ -20,14 +11,12 @@ import { getTodayDate, getTodayDayName, nowISO, getDynamicSemesterEndDate } from
 import { deterministicId, normalizeSubjectName } from '../utils/normalizer.js';
 
 chrome.runtime.onInstalled.addListener(async (details) => {
-  console.log('[AI Background] Extension installed:', details.reason);
-
   if (details.reason === 'install') {
     await storage.saveExtensionState(ExtensionState.INITIALIZING);
     await storage.savePreferences(DEFAULT_PREFERENCES);
   }
 
-  chrome.alarms.create('periodic-attendance-sync', { periodInMinutes: 60 });
+  chrome.alarms.create('checkStaleData', { periodInMinutes: 60 });
 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
@@ -507,8 +496,6 @@ async function handleGetWhatIf(data) {
   const subject = subjectsData.subjects.find(s => s.id === subjectId);
   if (!subject) return { error: 'Subject not found' };
 
-  const { whatIfAttend, whatIfBunk, calculateOverall: calcOverall } = await import('../engine/attendance-calculator.js');
-
   return {
     current: subject.percentage,
     ifAttend: whatIfAttend(subject.attended, subject.conducted),
@@ -563,8 +550,6 @@ async function handleFacultyParsed(data) {
   return { ok: true };
 }
 
-chrome.alarms.create('checkStaleData', { periodInMinutes: 60 });
-
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'checkStaleData') {
     const subjects = await storage.getSubjects();
@@ -578,3 +563,4 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     }
   }
 });
+

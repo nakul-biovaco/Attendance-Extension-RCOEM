@@ -1,4 +1,3 @@
-/** Copyright (c) 2026 Nakul Mundhada. All Rights Reserved. PROPRIETARY & CONFIDENTIAL. https://github.com/nakul-biovaco/Attendance-Extension-RCOEM */
 (() => {
   // src/adapters/portal-adapter.js
   var BasePortalAdapter = class {
@@ -98,6 +97,84 @@
   };
 
   // src/utils/normalizer.js
+  var BLACKLIST_EXACT = /* @__PURE__ */ new Set([
+    "profile",
+    "my profile",
+    "syllabus",
+    "calendar",
+    "calender",
+    "academic calendar",
+    "academic calender",
+    "timetable",
+    "time table",
+    "student timetable",
+    "library",
+    "library (0 issued)",
+    "fees details",
+    "fees",
+    "fees detail",
+    "leave details",
+    "leave detail",
+    "leave",
+    "hostel",
+    "contact mentor",
+    "mentor",
+    "mentoring",
+    "blogs",
+    "blog",
+    "dashboard",
+    "logout",
+    "change password",
+    "feedback",
+    "registration",
+    "exam registration",
+    "result",
+    "results",
+    "admit card",
+    "hall ticket",
+    "curriculum",
+    "home",
+    "about",
+    "contact",
+    "gallery",
+    "news",
+    "event",
+    "events",
+    "admission",
+    "admissions",
+    "placement",
+    "placements",
+    "grievance",
+    "alumni",
+    "anti ragging",
+    "download",
+    "downloads",
+    "course file",
+    "student portfolio",
+    "mentee",
+    "blogs details",
+    "academic schedule",
+    "syllabus plan"
+  ]);
+  var BLACKLIST_CONTAINS = [
+    "library (",
+    "contact mentor",
+    "leave details",
+    "fees details",
+    "leave report",
+    "admit card",
+    "change password",
+    "sign out",
+    "signout",
+    "my profile",
+    "feedback form"
+  ];
+  function isSubjectBlacklisted(name) {
+    if (!name) return true;
+    const lower = name.toLowerCase().trim();
+    if (BLACKLIST_EXACT.has(lower)) return true;
+    return BLACKLIST_CONTAINS.some((t) => lower.includes(t));
+  }
   function normalizeSubjectName(text) {
     if (!text) return "";
     return text.toLowerCase().replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/&#\d+;/g, "").replace(/&\w+;/g, "").replace(/\s+/g, " ").replace(/[^\w\s&-]/g, "").trim();
@@ -188,10 +265,8 @@
   }
 
   // src/adapters/juno-adapter.js
+  var DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   var JunoAdapter = class extends BasePortalAdapter {
-    constructor() {
-      super();
-    }
     detectPage() {
       const url = window.location.href.toLowerCase();
       const bodyText = document.body ? document.body.innerText : "";
@@ -929,7 +1004,7 @@
       const facultyMap = {};
       let currentDateStr = "";
       let currentDayName = "";
-      const dayNamesList = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+      const dayNamesList = DAY_NAMES;
       for (let r = headerRowIdx + 1; r < rows.length; r++) {
         const row = rows[r];
         const cells = row.querySelectorAll("td, th");
@@ -1213,9 +1288,6 @@
       }
       return info;
     }
-    // ──────────────────────────────────────────────
-    // Helpers
-    // ──────────────────────────────────────────────
     _detectClassType(text) {
       const lower = text.toLowerCase();
       if (lower.includes("lab") || lower.includes("practical")) return "Lab";
@@ -1227,14 +1299,6 @@
       const roomMatch = text.match(/room\s*[:\-]?\s*(\w+)/i) || text.match(/\b(room\s*\d+[A-Z]?)\b/i) || text.match(/\b([A-Z]\d{3,4})\b/);
       return roomMatch ? roomMatch[1] : null;
     }
-    // ──────────────────────────────────────────────
-    // Academic Calendar & Holiday Parser
-    // ──────────────────────────────────────────────
-    /**
-     * Parse holidays and key semester dates from the Academic Calendar page.
-     * Scans for dates marked with green indicators/text or explicit holiday labels.
-     * @returns {{ holidays: Array<{ date: string, name: string, isHoliday: boolean }>, semesterEndDate: string|null }}
-     */
     parseHolidays() {
       const holidays = [];
       let semesterEndDate = null;
@@ -1344,171 +1408,10 @@
       }
       return rowText.replace(/\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}\b/g, "").replace(/holiday|vacation/gi, "").trim() || "Holiday";
     }
-    _isSubjectBlacklisted(subjectName) {
-      if (!subjectName) return true;
-      const lower = subjectName.toLowerCase().trim();
-      const blacklistExact = /* @__PURE__ */ new Set([
-        "profile",
-        "my profile",
-        "syllabus",
-        "calendar",
-        "calender",
-        "academic calendar",
-        "academic calender",
-        "timetable",
-        "time table",
-        "student timetable",
-        "student timetable",
-        "library",
-        "library (0 issued)",
-        "fees details",
-        "fees",
-        "fees detail",
-        "leave details",
-        "leave detail",
-        "leave",
-        "hostel",
-        "contact mentor",
-        "mentor",
-        "mentoring",
-        "blogs",
-        "blog",
-        "dashboard",
-        "logout",
-        "change password",
-        "feedback",
-        "registration",
-        "exam registration",
-        "result",
-        "results",
-        "admit card",
-        "hall ticket",
-        "curriculum",
-        "home",
-        "about",
-        "contact",
-        "gallery",
-        "news",
-        "event",
-        "events",
-        "admission",
-        "admissions",
-        "placement",
-        "placements",
-        "grievance",
-        "alumni",
-        "anti ragging",
-        "download",
-        "downloads",
-        "course file",
-        "student portfolio",
-        "mentee",
-        "blogs details",
-        "academic schedule",
-        "syllabus plan",
-        "contact mentor",
-        "leave details"
-      ]);
-      if (blacklistExact.has(lower)) return true;
-      const blacklistContains = [
-        "library (",
-        "contact mentor",
-        "leave details",
-        "fees details",
-        "leave report",
-        "admit card",
-        "change password",
-        "sign out",
-        "signout",
-        "my profile",
-        "feedback form"
-      ];
-      if (blacklistContains.some((term) => lower.includes(term))) return true;
-      return false;
+    _isSubjectBlacklisted(name) {
+      return isSubjectBlacklisted(name);
     }
   };
-
-  // src/types/models.js
-  var ExtensionState = Object.freeze({
-    INITIALIZING: "INITIALIZING",
-    WAITING_FOR_PORTAL: "WAITING_FOR_PORTAL",
-    SCHEDULE_DETECTED: "SCHEDULE_DETECTED",
-    ATTENDANCE_DETECTED: "ATTENDANCE_DETECTED",
-    MATCHING: "MATCHING",
-    READY: "READY",
-    STALE_DATA: "STALE_DATA",
-    MATCH_ERROR: "MATCH_ERROR",
-    PARSER_ERROR: "PARSER_ERROR"
-  });
-  var PageType = Object.freeze({
-    STUDENT_HOME: "student-home",
-    ATTENDANCE: "attendance",
-    TIMETABLE: "timetable",
-    UNKNOWN: "unknown"
-  });
-  var RecommendationType = Object.freeze({
-    MUST_ATTEND: "MUST_ATTEND",
-    ATTEND_LOW_BUFFER: "ATTEND_LOW_BUFFER",
-    BUNK_SAFE: "BUNK_SAFE",
-    OPTIONAL: "OPTIONAL",
-    DATA_NOT_VERIFIED: "DATA_NOT_VERIFIED",
-    HIGH_RISK: "HIGH_RISK"
-  });
-  var RiskLevel = Object.freeze({
-    HIGH: "HIGH",
-    MEDIUM: "MEDIUM",
-    LOW: "LOW",
-    SAFE: "SAFE"
-  });
-  var MatchMethod = Object.freeze({
-    COURSE_CODE_EXACT: "COURSE_CODE_EXACT",
-    COURSE_CODE_PARTIAL: "COURSE_CODE_PARTIAL",
-    NAME_EXACT: "NAME_EXACT",
-    NAME_FUZZY: "NAME_FUZZY",
-    USER_ALIAS: "USER_ALIAS",
-    PORTAL_ID: "PORTAL_ID",
-    UNMATCHED: "UNMATCHED"
-  });
-  var MessageType = Object.freeze({
-    SCHEDULE_PARSED: "SCHEDULE_PARSED",
-    ATTENDANCE_PARSED: "ATTENDANCE_PARSED",
-    TIMETABLE_PARSED: "TIMETABLE_PARSED",
-    CALENDAR_PARSED: "CALENDAR_PARSED",
-    PAGE_DETECTED: "PAGE_DETECTED",
-    FACULTY_PARSED: "FACULTY_PARSED",
-    STUDENT_INFO_PARSED: "STUDENT_INFO_PARSED",
-    INJECT_RECOMMENDATIONS: "INJECT_RECOMMENDATIONS",
-    INJECT_ATTENDANCE_ENHANCEMENTS: "INJECT_ATTENDANCE_ENHANCEMENTS",
-    GET_TODAY_PLAN: "GET_TODAY_PLAN",
-    GET_STATE: "GET_STATE",
-    GET_SUBJECTS: "GET_SUBJECTS",
-    GET_HOLIDAYS: "GET_HOLIDAYS",
-    GET_DEBUG_INFO: "GET_DEBUG_INFO",
-    GET_PREFERENCES: "GET_PREFERENCES",
-    SAVE_PREFERENCES: "SAVE_PREFERENCES",
-    FORCE_RESYNC: "FORCE_RESYNC",
-    EXPORT_DATA: "EXPORT_DATA",
-    CLEAR_DATA: "CLEAR_DATA",
-    SAVE_ALIAS: "SAVE_ALIAS",
-    GET_WHAT_IF: "GET_WHAT_IF",
-    GET_PROJECTIONS: "GET_PROJECTIONS",
-    GET_STUDENT_INFO: "GET_STUDENT_INFO",
-    OPEN_OPTIONS: "OPEN_OPTIONS",
-    USER_LOGGED_OUT: "USER_LOGGED_OUT",
-    RESET_SESSION: "RESET_SESSION"
-  });
-  var DEFAULT_PREFERENCES = Object.freeze({
-    subjectTarget: 60,
-    overallTarget: 75,
-    safetyBuffer: 2,
-    preferredBunkDays: [],
-    semesterEndDate: null,
-    portalDomain: "rcoem.in",
-    aliasMap: {},
-    debugMode: false,
-    staleDataThresholdHours: 48,
-    firstRunComplete: false
-  });
 
   // src/content/schedule-injector.js
   var INJECTOR_ATTR = "data-ai-injected";
@@ -1533,12 +1436,17 @@
     const existing = document.querySelectorAll(`[${INJECTOR_ATTR}]`);
     existing.forEach((el) => el.remove());
   }
+  var _cachedScheduleContainer = null;
   function findScheduleContainer() {
-    const allElements = document.querySelectorAll("*");
-    for (const el of allElements) {
-      const directText = getDirectText(el).toLowerCase();
-      if (directText.includes("today's schedule") || directText.includes("todays schedule")) {
-        return el.parentElement || el;
+    if (_cachedScheduleContainer && document.contains(_cachedScheduleContainer)) {
+      return _cachedScheduleContainer;
+    }
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const text = walker.currentNode.textContent.toLowerCase();
+      if (text.includes("today's schedule") || text.includes("todays schedule")) {
+        _cachedScheduleContainer = walker.currentNode.parentElement?.parentElement || walker.currentNode.parentElement;
+        return _cachedScheduleContainer;
       }
     }
     return null;
@@ -1792,9 +1700,6 @@
       status.textContent = "No attendance data. Open Attendance page to sync.";
     }
     container.appendChild(status);
-  }
-  function getDirectText(el) {
-    return Array.from(el.childNodes).filter((n) => n.nodeType === Node.TEXT_NODE).map((n) => n.textContent).join("").trim();
   }
   function injectDashboardCounterCard(plan, studentInfo, lastSync, isStale) {
     const floatingRoot = document.getElementById("ai-floating-widget-root");
@@ -2579,6 +2484,88 @@
     container.appendChild(grid);
   }
 
+  // src/types/models.js
+  var ExtensionState = Object.freeze({
+    INITIALIZING: "INITIALIZING",
+    WAITING_FOR_PORTAL: "WAITING_FOR_PORTAL",
+    SCHEDULE_DETECTED: "SCHEDULE_DETECTED",
+    ATTENDANCE_DETECTED: "ATTENDANCE_DETECTED",
+    MATCHING: "MATCHING",
+    READY: "READY",
+    STALE_DATA: "STALE_DATA",
+    MATCH_ERROR: "MATCH_ERROR",
+    PARSER_ERROR: "PARSER_ERROR"
+  });
+  var PageType = Object.freeze({
+    STUDENT_HOME: "student-home",
+    ATTENDANCE: "attendance",
+    TIMETABLE: "timetable",
+    UNKNOWN: "unknown"
+  });
+  var RecommendationType = Object.freeze({
+    MUST_ATTEND: "MUST_ATTEND",
+    ATTEND_LOW_BUFFER: "ATTEND_LOW_BUFFER",
+    BUNK_SAFE: "BUNK_SAFE",
+    OPTIONAL: "OPTIONAL",
+    DATA_NOT_VERIFIED: "DATA_NOT_VERIFIED",
+    HIGH_RISK: "HIGH_RISK"
+  });
+  var RiskLevel = Object.freeze({
+    HIGH: "HIGH",
+    MEDIUM: "MEDIUM",
+    LOW: "LOW",
+    SAFE: "SAFE"
+  });
+  var MatchMethod = Object.freeze({
+    COURSE_CODE_EXACT: "COURSE_CODE_EXACT",
+    COURSE_CODE_PARTIAL: "COURSE_CODE_PARTIAL",
+    NAME_EXACT: "NAME_EXACT",
+    NAME_FUZZY: "NAME_FUZZY",
+    USER_ALIAS: "USER_ALIAS",
+    PORTAL_ID: "PORTAL_ID",
+    UNMATCHED: "UNMATCHED"
+  });
+  var MessageType = Object.freeze({
+    SCHEDULE_PARSED: "SCHEDULE_PARSED",
+    ATTENDANCE_PARSED: "ATTENDANCE_PARSED",
+    TIMETABLE_PARSED: "TIMETABLE_PARSED",
+    CALENDAR_PARSED: "CALENDAR_PARSED",
+    PAGE_DETECTED: "PAGE_DETECTED",
+    FACULTY_PARSED: "FACULTY_PARSED",
+    STUDENT_INFO_PARSED: "STUDENT_INFO_PARSED",
+    INJECT_RECOMMENDATIONS: "INJECT_RECOMMENDATIONS",
+    INJECT_ATTENDANCE_ENHANCEMENTS: "INJECT_ATTENDANCE_ENHANCEMENTS",
+    GET_TODAY_PLAN: "GET_TODAY_PLAN",
+    GET_STATE: "GET_STATE",
+    GET_SUBJECTS: "GET_SUBJECTS",
+    GET_HOLIDAYS: "GET_HOLIDAYS",
+    GET_DEBUG_INFO: "GET_DEBUG_INFO",
+    GET_PREFERENCES: "GET_PREFERENCES",
+    SAVE_PREFERENCES: "SAVE_PREFERENCES",
+    FORCE_RESYNC: "FORCE_RESYNC",
+    EXPORT_DATA: "EXPORT_DATA",
+    CLEAR_DATA: "CLEAR_DATA",
+    SAVE_ALIAS: "SAVE_ALIAS",
+    GET_WHAT_IF: "GET_WHAT_IF",
+    GET_PROJECTIONS: "GET_PROJECTIONS",
+    GET_STUDENT_INFO: "GET_STUDENT_INFO",
+    OPEN_OPTIONS: "OPEN_OPTIONS",
+    USER_LOGGED_OUT: "USER_LOGGED_OUT",
+    RESET_SESSION: "RESET_SESSION"
+  });
+  var DEFAULT_PREFERENCES = Object.freeze({
+    subjectTarget: 60,
+    overallTarget: 75,
+    safetyBuffer: 2,
+    preferredBunkDays: [],
+    semesterEndDate: null,
+    portalDomain: "rcoem.in",
+    aliasMap: {},
+    debugMode: false,
+    staleDataThresholdHours: 48,
+    firstRunComplete: false
+  });
+
   // src/content/main.js
   var adapter = null;
   var currentPage = "unknown";
@@ -2587,8 +2574,8 @@
   var cachedStudentInfo = null;
   var cachedLastSync = null;
   var cachedIsStale = false;
+  var lastProcessedTime = 0;
   function init() {
-    console.log("[Attendance Insights] Content script loaded");
     adapter = new JunoAdapter();
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", onReady);
@@ -2596,16 +2583,12 @@
       onReady();
     }
   }
-  var lastProcessedTime = 0;
   function onReady() {
-    console.log("[Attendance Insights] Portal DOM ready, initiating fast sync...");
     setupLogoutInterceptor();
     detectAndProcess();
     setupObserver();
-    [150, 450, 1e3, 2e3].forEach((delay) => {
-      setTimeout(() => {
-        detectAndProcess(true);
-      }, delay);
+    [250, 1e3].forEach((delay) => {
+      setTimeout(() => detectAndProcess(true), delay);
     });
     setInterval(() => {
       const page = adapter?.detectPage();
@@ -2619,19 +2602,17 @@
       } else if (page === "timetable" && (!document.getElementById("ai-timetable-toolbar") || !document.getElementById("ai-quick-sem-btn"))) {
         processTimetablePage();
       }
-    }, 1200);
+    }, 1500);
     chrome.runtime.onMessage.addListener(handleMessage);
   }
   function setupLogoutInterceptor() {
     document.addEventListener("click", (e) => {
-      const target = e.target;
-      const link = target?.closest?.('a, button, input[type="submit"], input[type="button"]');
+      const link = e.target?.closest?.('a, button, input[type="submit"], input[type="button"]');
       if (!link) return;
       const href = link.getAttribute("href")?.toLowerCase() || "";
       const text = (link.innerText || link.getAttribute("value") || link.getAttribute("title") || "").toLowerCase();
       const onclick = link.getAttribute("onclick")?.toLowerCase() || "";
       if (href.includes("logout") || href.includes("signout") || text.includes("logout") || text.includes("sign out") || onclick.includes("logout")) {
-        console.log("[Attendance Insights] User logout action intercepted. Triggering high security session reset...");
         sendMessage({ type: MessageType.USER_LOGGED_OUT });
         cleanupInjectedContent();
       }
@@ -2644,7 +2625,6 @@
     try {
       const page = adapter.detectPage();
       if (page === "auth") {
-        console.log("[Attendance Insights] Login/Logout screen detected. Erasing session data...");
         sendMessage({ type: MessageType.USER_LOGGED_OUT });
         cleanupInjectedContent();
         return;
@@ -2656,23 +2636,20 @@
           data: { studentInfo }
         });
       }
-      if (page === "unknown") {
-        return;
-      }
+      if (page === "unknown") return;
       const now = Date.now();
       if (!force && page === currentPage && now - lastProcessedTime < 800) {
         return;
       }
       lastProcessedTime = now;
       currentPage = page;
-      console.log(`[Attendance Insights] Fast syncing page: ${page}`);
       processPage(page);
       sendMessage({
         type: MessageType.PAGE_DETECTED,
         data: { page }
       });
     } catch (err) {
-      console.error("[Attendance Insights] Error during detection:", err);
+      console.error("[Attendance Insights] Detection error:", err);
     }
   }
   function processPage(page) {
@@ -2690,18 +2667,15 @@
         processCalendarPage();
         break;
       case "auth":
-        console.log("[Attendance Insights] Auth/Login page detected. Purging previous session data...");
         sendMessage({ type: MessageType.USER_LOGGED_OUT });
         cleanupInjectedContent();
         break;
       default:
-        console.log("[Attendance Insights] Unknown page, no action");
+        break;
     }
   }
   async function processStudentHome() {
-    console.log("[Attendance Insights] Processing Student Home...");
     const classes = adapter.parseSchedule();
-    console.log(`[Attendance Insights] Parsed ${classes.length} classes from schedule`);
     const studentInfo = adapter.extractStudentInfo();
     const response = await sendMessage({
       type: MessageType.SCHEDULE_PARSED,
@@ -2729,33 +2703,20 @@
       cachedLastSync,
       cachedIsStale
     );
-    [150, 450, 1e3, 2e3].forEach((delay) => {
-      setTimeout(() => {
-        injectFloatingDashboard(
-          cachedPlanData,
-          cachedStudentInfo,
-          cachedLastSync,
-          cachedIsStale
-        );
-      }, delay);
-    });
+    setTimeout(() => {
+      injectFloatingDashboard(cachedPlanData, cachedStudentInfo, cachedLastSync, cachedIsStale);
+    }, 400);
   }
   async function processAttendancePage() {
-    console.log("[Attendance Insights] Processing Attendance Page...");
     const facultyMap = adapter.parseSyllabusFaculty();
     if (Object.keys(facultyMap).length > 0) {
-      console.log(`[Attendance Insights] Parsed ${Object.keys(facultyMap).length} faculty names`);
       await sendMessage({
         type: MessageType.FACULTY_PARSED,
         data: { facultyMap }
       });
     }
     const subjects = adapter.parseAttendance();
-    console.log(`[Attendance Insights] Parsed ${subjects.length} subjects from attendance`);
-    if (subjects.length === 0) {
-      console.log("[Attendance Insights] No subjects found in attendance table");
-      return;
-    }
+    if (subjects.length === 0) return;
     const response = await sendMessage({
       type: MessageType.ATTENDANCE_PARSED,
       data: { subjects }
@@ -2768,11 +2729,9 @@
         response.overallTarget,
         response.syncTime
       );
-      console.log(`[Attendance Insights] Enhanced attendance table with ${response.projections.length} projections`);
     }
   }
   async function processTimetablePage() {
-    console.log("[Attendance Insights] Processing Timetable Page...");
     const timetable = adapter.parseTimetable();
     const [subResponse, prefsResponse, projResponse] = await Promise.all([
       sendMessage({ type: MessageType.GET_SUBJECTS }),
@@ -2783,7 +2742,6 @@
     const preferences = prefsResponse?.preferences || {};
     const projections = projResponse?.projections || [];
     if (timetable) {
-      console.log(`[Attendance Insights] Parsed timetable with ${Object.keys(timetable.days).length} days`);
       if (timetable.facultyMap && Object.keys(timetable.facultyMap).length > 0) {
         await sendMessage({
           type: MessageType.FACULTY_PARSED,
@@ -2798,9 +2756,7 @@
     injectTimetableEnhancements(timetable, subjects, preferences, projections);
   }
   async function processCalendarPage() {
-    console.log("[Attendance Insights] Processing Academic Calendar Page...");
     const { holidays, semesterEndDate } = adapter.parseHolidays();
-    console.log(`[Attendance Insights] Parsed ${holidays.length} holidays from calendar`, { holidays, semesterEndDate });
     await sendMessage({
       type: MessageType.CALENDAR_PARSED,
       data: { holidays, semesterEndDate }
@@ -2840,7 +2796,7 @@
   }
   function injectAttendancePrompt() {
     removeInjectedContent();
-    const container = findScheduleContainer2();
+    const container = document.querySelector("table") || document.body;
     if (!container) return;
     const prompt = document.createElement("div");
     prompt.setAttribute("data-ai-injected", "true");
@@ -2864,26 +2820,14 @@
   `;
     container.appendChild(prompt);
   }
-  function findScheduleContainer2() {
-    const allElements = document.querySelectorAll("*");
-    for (const el of allElements) {
-      const text = Array.from(el.childNodes).filter((n) => n.nodeType === Node.TEXT_NODE).map((n) => n.textContent).join("").toLowerCase().trim();
-      if (text.includes("today's schedule") || text.includes("todays schedule")) {
-        return el.parentElement || el;
-      }
-    }
-    return null;
-  }
   function setupObserver() {
     if (hasSetupObserver) return;
     hasSetupObserver = true;
     adapter.observeContentChanges(() => {
-      console.log("[Attendance Insights] Content change detected, re-processing...");
       setTimeout(detectAndProcess, 50);
     });
   }
   function handleMessage(message, sender, sendResponse) {
-    console.log("[Attendance Insights] Content received message:", message.type);
     switch (message.type) {
       case MessageType.INJECT_RECOMMENDATIONS:
         if (currentPage === "student-home" && message.data) {

@@ -1,32 +1,20 @@
-/**
- * Copyright (c) 2026 Nakul Mundhada. All Rights Reserved.
- * 
- * PROPRIETARY & CONFIDENTIAL SOURCE CODE.
- * This software is the intellectual property of Nakul Mundhada.
- * Unauthorized modification, redistribution, re-licensing, or commercial
- * exploitation is strictly prohibited without prior written consent.
- * 
- * Author: Nakul Mundhada (https://github.com/nakul-biovaco)
- */
+// (c) 2026 Nakul Mundhada. All rights reserved.
 
 import { JunoAdapter } from '../adapters/juno-adapter.js';
-import { matchSubjects, matchStats } from './subject-matcher.js';
 import { injectScheduleRecommendations, removeInjectedContent, injectFloatingDashboard, injectTimetableEnhancements } from './schedule-injector.js';
 import { injectAttendanceEnhancements, removeAttendanceInjections } from './attendance-injector.js';
 import { MessageType } from '../types/models.js';
 
 let adapter = null;
 let currentPage = 'unknown';
-let isProcessing = false;
 let hasSetupObserver = false;
 let cachedPlanData = null;
 let cachedStudentInfo = null;
 let cachedLastSync = null;
 let cachedIsStale = false;
+let lastProcessedTime = 0;
 
 function init() {
-  console.log('[Attendance Insights] Content script loaded');
-
   adapter = new JunoAdapter();
 
   if (document.readyState === 'loading') {
@@ -36,20 +24,13 @@ function init() {
   }
 }
 
-let lastProcessedTime = 0;
-
 function onReady() {
-  console.log('[Attendance Insights] Portal DOM ready, initiating fast sync...');
-
   setupLogoutInterceptor();
-
   detectAndProcess();
   setupObserver();
 
-  [150, 450, 1000, 2000].forEach(delay => {
-    setTimeout(() => {
-      detectAndProcess(true);
-    }, delay);
+  [250, 1000].forEach(delay => {
+    setTimeout(() => detectAndProcess(true), delay);
   });
 
   setInterval(() => {
@@ -64,15 +45,14 @@ function onReady() {
     } else if (page === 'timetable' && (!document.getElementById('ai-timetable-toolbar') || !document.getElementById('ai-quick-sem-btn'))) {
       processTimetablePage();
     }
-  }, 1200);
+  }, 1500);
 
   chrome.runtime.onMessage.addListener(handleMessage);
 }
 
 function setupLogoutInterceptor() {
   document.addEventListener('click', (e) => {
-    const target = e.target;
-    const link = target?.closest?.('a, button, input[type="submit"], input[type="button"]');
+    const link = e.target?.closest?.('a, button, input[type="submit"], input[type="button"]');
     if (!link) return;
 
     const href = link.getAttribute('href')?.toLowerCase() || '';
@@ -80,7 +60,6 @@ function setupLogoutInterceptor() {
     const onclick = link.getAttribute('onclick')?.toLowerCase() || '';
 
     if (href.includes('logout') || href.includes('signout') || text.includes('logout') || text.includes('sign out') || onclick.includes('logout')) {
-      console.log('[Attendance Insights] User logout action intercepted. Triggering high security session reset...');
       sendMessage({ type: MessageType.USER_LOGGED_OUT });
       cleanupInjectedContent();
     }
@@ -96,7 +75,6 @@ function detectAndProcess(force = false) {
     const page = adapter.detectPage();
 
     if (page === 'auth') {
-      console.log('[Attendance Insights] Login/Logout screen detected. Erasing session data...');
       sendMessage({ type: MessageType.USER_LOGGED_OUT });
       cleanupInjectedContent();
       return;
@@ -110,9 +88,7 @@ function detectAndProcess(force = false) {
       });
     }
 
-    if (page === 'unknown') {
-      return;
-    }
+    if (page === 'unknown') return;
 
     const now = Date.now();
     if (!force && page === currentPage && (now - lastProcessedTime < 800)) {
@@ -122,16 +98,14 @@ function detectAndProcess(force = false) {
     lastProcessedTime = now;
     currentPage = page;
 
-    console.log(`[Attendance Insights] Fast syncing page: ${page}`);
     processPage(page);
 
     sendMessage({
       type: MessageType.PAGE_DETECTED,
       data: { page },
     });
-
   } catch (err) {
-    console.error('[Attendance Insights] Error during detection:', err);
+    console.error('[Attendance Insights] Detection error:', err);
   }
 }
 
@@ -150,25 +124,8 @@ function processPage(page) {
       processCalendarPage();
       break;
     case 'auth':
-      console.log('[Attendance Insights] Auth/Login page detected. Purging previous session data...');
       sendMessage({ type: MessageType.USER_LOGGED_OUT });
       cleanupInjectedContent();
-      break;
-    default:
-      console.log('[Attendance Insights] Unknown page, no action');
-  }
-}
-
-function reprocess(page) {
-  switch (page) {
-    case 'student-home':
-      processStudentHome();
-      break;
-    case 'attendance':
-      processAttendancePage();
-      break;
-    case 'calendar':
-      processCalendarPage();
       break;
     default:
       break;
@@ -176,11 +133,7 @@ function reprocess(page) {
 }
 
 async function processStudentHome() {
-  console.log('[Attendance Insights] Processing Student Home...');
-
   const classes = adapter.parseSchedule();
-  console.log(`[Attendance Insights] Parsed ${classes.length} classes from schedule`);
-
   const studentInfo = adapter.extractStudentInfo();
 
   const response = await sendMessage({
@@ -214,24 +167,14 @@ async function processStudentHome() {
     cachedIsStale
   );
 
-  [150, 450, 1000, 2000].forEach(delay => {
-    setTimeout(() => {
-      injectFloatingDashboard(
-        cachedPlanData,
-        cachedStudentInfo,
-        cachedLastSync,
-        cachedIsStale
-      );
-    }, delay);
-  });
+  setTimeout(() => {
+    injectFloatingDashboard(cachedPlanData, cachedStudentInfo, cachedLastSync, cachedIsStale);
+  }, 400);
 }
 
 async function processAttendancePage() {
-  console.log('[Attendance Insights] Processing Attendance Page...');
-
   const facultyMap = adapter.parseSyllabusFaculty();
   if (Object.keys(facultyMap).length > 0) {
-    console.log(`[Attendance Insights] Parsed ${Object.keys(facultyMap).length} faculty names`);
     await sendMessage({
       type: MessageType.FACULTY_PARSED,
       data: { facultyMap },
@@ -239,12 +182,7 @@ async function processAttendancePage() {
   }
 
   const subjects = adapter.parseAttendance();
-  console.log(`[Attendance Insights] Parsed ${subjects.length} subjects from attendance`);
-
-  if (subjects.length === 0) {
-    console.log('[Attendance Insights] No subjects found in attendance table');
-    return;
-  }
+  if (subjects.length === 0) return;
 
   const response = await sendMessage({
     type: MessageType.ATTENDANCE_PARSED,
@@ -259,13 +197,10 @@ async function processAttendancePage() {
       response.overallTarget,
       response.syncTime
     );
-    console.log(`[Attendance Insights] Enhanced attendance table with ${response.projections.length} projections`);
   }
 }
 
 async function processTimetablePage() {
-  console.log('[Attendance Insights] Processing Timetable Page...');
-
   const timetable = adapter.parseTimetable();
 
   const [subResponse, prefsResponse, projResponse] = await Promise.all([
@@ -279,8 +214,6 @@ async function processTimetablePage() {
   const projections = projResponse?.projections || [];
 
   if (timetable) {
-    console.log(`[Attendance Insights] Parsed timetable with ${Object.keys(timetable.days).length} days`);
-
     if (timetable.facultyMap && Object.keys(timetable.facultyMap).length > 0) {
       await sendMessage({
         type: MessageType.FACULTY_PARSED,
@@ -298,10 +231,7 @@ async function processTimetablePage() {
 }
 
 async function processCalendarPage() {
-  console.log('[Attendance Insights] Processing Academic Calendar Page...');
-
   const { holidays, semesterEndDate } = adapter.parseHolidays();
-  console.log(`[Attendance Insights] Parsed ${holidays.length} holidays from calendar`, { holidays, semesterEndDate });
 
   await sendMessage({
     type: MessageType.CALENDAR_PARSED,
@@ -349,7 +279,7 @@ function injectCalendarSyncBanner(holidayCount, semesterEndDate) {
 function injectAttendancePrompt() {
   removeInjectedContent();
 
-  const container = findScheduleContainer();
+  const container = document.querySelector('table') || document.body;
   if (!container) return;
 
   const prompt = document.createElement('div');
@@ -376,37 +306,16 @@ function injectAttendancePrompt() {
   container.appendChild(prompt);
 }
 
-function findScheduleContainer() {
-  const allElements = document.querySelectorAll('*');
-  for (const el of allElements) {
-    const text = Array.from(el.childNodes)
-      .filter(n => n.nodeType === Node.TEXT_NODE)
-      .map(n => n.textContent)
-      .join('')
-      .toLowerCase()
-      .trim();
-
-    if (text.includes("today's schedule") || text.includes("todays schedule")) {
-      return el.parentElement || el;
-    }
-  }
-  return null;
-}
-
 function setupObserver() {
   if (hasSetupObserver) return;
   hasSetupObserver = true;
 
   adapter.observeContentChanges(() => {
-    console.log('[Attendance Insights] Content change detected, re-processing...');
-
     setTimeout(detectAndProcess, 50);
   });
 }
 
 function handleMessage(message, sender, sendResponse) {
-  console.log('[Attendance Insights] Content received message:', message.type);
-
   switch (message.type) {
     case MessageType.INJECT_RECOMMENDATIONS:
       if (currentPage === 'student-home' && message.data) {
@@ -448,7 +357,6 @@ function handleMessage(message, sender, sendResponse) {
 
 function sendMessage(message) {
   return new Promise((resolve) => {
-
     if (!chrome.runtime?.id) {
       resolve(null);
       return;

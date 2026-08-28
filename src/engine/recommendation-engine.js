@@ -1,13 +1,4 @@
-/**
- * Copyright (c) 2026 Nakul Mundhada. All Rights Reserved.
- * 
- * PROPRIETARY & CONFIDENTIAL SOURCE CODE.
- * This software is the intellectual property of Nakul Mundhada.
- * Unauthorized modification, redistribution, re-licensing, or commercial
- * exploitation is strictly prohibited without prior written consent.
- * 
- * Author: Nakul Mundhada (https://github.com/nakul-biovaco)
- */
+// (c) 2026 Nakul Mundhada. All rights reserved.
 
 import { RecommendationType } from '../types/models.js';
 import {
@@ -17,46 +8,41 @@ import {
 import { projectSubject, whatIfSemesterProjection } from './projection-engine.js';
 import { assessSubjectRisk } from './risk-engine.js';
 import { optimizeTodayBunks } from './optimizer.js';
+import { isSubjectBlacklisted } from '../utils/normalizer.js';
 
 const RECOMMENDATION_STYLES = {
   [RecommendationType.MUST_ATTEND]: {
     label: 'MUST ATTEND',
-    emoji: '',
     color: '#dc2626',
     bgColor: '#fee2e2',
     borderColor: '#ef4444',
   },
   [RecommendationType.ATTEND_LOW_BUFFER]: {
     label: 'ATTEND — LOW BUFFER',
-    emoji: '',
     color: '#d97706',
     bgColor: '#fef3c7',
     borderColor: '#f59e0b',
   },
   [RecommendationType.BUNK_SAFE]: {
     label: 'BUNK SAFE',
-    emoji: '',
     color: '#16a34a',
     bgColor: '#dcfce7',
     borderColor: '#22c55e',
   },
   [RecommendationType.OPTIONAL]: {
     label: 'OPTIONAL',
-    emoji: '',
     color: '#2563eb',
     bgColor: '#dbeafe',
     borderColor: '#3b82f6',
   },
   [RecommendationType.DATA_NOT_VERIFIED]: {
     label: 'DATA NOT VERIFIED',
-    emoji: '',
     color: '#ca8a04',
     bgColor: '#fef9c3',
     borderColor: '#eab308',
   },
   [RecommendationType.HIGH_RISK]: {
     label: 'HIGH RISK',
-    emoji: '',
     color: '#b91c1c',
     bgColor: '#fee2e2',
     borderColor: '#dc2626',
@@ -64,30 +50,6 @@ const RECOMMENDATION_STYLES = {
 };
 
 const MATCH_CONFIDENCE_THRESHOLD = 0.70;
-
-function isSubjectBlacklisted(subjectName) {
-  if (!subjectName) return true;
-  const lower = subjectName.toLowerCase().trim();
-  const blacklistExact = new Set([
-    'profile', 'my profile', 'syllabus', 'calendar', 'calender', 'academic calendar', 'academic calender',
-    'timetable', 'time table', 'student timetable', 'student timetable', 'library', 'library (0 issued)',
-    'fees details', 'fees', 'fees detail', 'leave details', 'leave detail', 'leave', 'hostel',
-    'contact mentor', 'mentor', 'mentoring', 'blogs', 'blog', 'dashboard', 'logout',
-    'change password', 'feedback', 'registration', 'exam registration', 'result', 'results',
-    'admit card', 'hall ticket', 'curriculum', 'home', 'about', 'contact', 'gallery', 'news',
-    'event', 'events', 'admission', 'admissions', 'placement', 'placements', 'grievance',
-    'alumni', 'anti ragging', 'download', 'downloads', 'course file', 'student portfolio',
-    'mentee', 'blogs details', 'academic schedule', 'syllabus plan', 'contact mentor', 'leave details'
-  ]);
-
-  if (blacklistExact.has(lower)) return true;
-
-  const blacklistContains = [
-    'library (', 'contact mentor', 'leave details', 'fees details', 'leave report', 'admit card',
-    'change password', 'sign out', 'signout', 'my profile', 'feedback form'
-  ];
-  return blacklistContains.some(term => lower.includes(term));
-}
 
 export function generateRecommendations(matchedClasses, allSubjects, preferences, weeklySchedule, holidays = []) {
   const { subjectTarget, overallTarget, safetyBuffer, preferredBunkDays, semesterEndDate } = preferences;

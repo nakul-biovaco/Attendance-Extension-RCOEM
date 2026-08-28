@@ -1,13 +1,4 @@
-/**
- * Copyright (c) 2026 Nakul Mundhada. All Rights Reserved.
- * 
- * PROPRIETARY & CONFIDENTIAL SOURCE CODE.
- * This software is the intellectual property of Nakul Mundhada.
- * Unauthorized modification, redistribution, re-licensing, or commercial
- * exploitation is strictly prohibited without prior written consent.
- * 
- * Author: Nakul Mundhada (https://github.com/nakul-biovaco)
- */
+// (c) 2026 Nakul Mundhada. All rights reserved.
 
 import { relativeTime, getDynamicSemesterEndDate } from '../utils/date-utils.js';
 
@@ -44,15 +35,20 @@ export function removeInjectedContent() {
   existing.forEach(el => el.remove());
 }
 
+let _cachedScheduleContainer = null;
+
 function findScheduleContainer() {
+  if (_cachedScheduleContainer && document.contains(_cachedScheduleContainer)) {
+    return _cachedScheduleContainer;
+  }
 
-  const allElements = document.querySelectorAll('*');
-
-  for (const el of allElements) {
-    const directText = getDirectText(el).toLowerCase();
-    if (directText.includes("today's schedule") || directText.includes("todays schedule")) {
-
-      return el.parentElement || el;
+  // Use TreeWalker on text nodes instead of querySelectorAll('*')
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    const text = walker.currentNode.textContent.toLowerCase();
+    if (text.includes("today's schedule") || text.includes("todays schedule")) {
+      _cachedScheduleContainer = walker.currentNode.parentElement?.parentElement || walker.currentNode.parentElement;
+      return _cachedScheduleContainer;
     }
   }
 

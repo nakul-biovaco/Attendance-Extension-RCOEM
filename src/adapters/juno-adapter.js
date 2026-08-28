@@ -1,22 +1,12 @@
-/**
- * Copyright (c) 2026 Nakul Mundhada. All Rights Reserved.
- * 
- * PROPRIETARY & CONFIDENTIAL SOURCE CODE.
- * This software is the intellectual property of Nakul Mundhada.
- * Unauthorized modification, redistribution, re-licensing, or commercial
- * exploitation is strictly prohibited without prior written consent.
- * 
- * Author: Nakul Mundhada (https://github.com/nakul-biovaco)
- */
+// (c) 2026 Nakul Mundhada. All rights reserved.
 
 import { BasePortalAdapter } from './portal-adapter.js';
-import { normalizeSubjectName, normalizeCourseCode, cleanDOMText, parseAttendanceFraction, parseTime, deterministicId } from '../utils/normalizer.js';
+import { normalizeSubjectName, normalizeCourseCode, cleanDOMText, parseAttendanceFraction, parseTime, deterministicId, isSubjectBlacklisted } from '../utils/normalizer.js';
 import { getTodayDate, getTodayDayName, parsePortalDate, nowISO } from '../utils/date-utils.js';
 
+const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
 export class JunoAdapter extends BasePortalAdapter {
-  constructor() {
-    super();
-  }
 
   detectPage() {
     const url = window.location.href.toLowerCase();
@@ -871,7 +861,6 @@ export class JunoAdapter extends BasePortalAdapter {
     for (const table of tables) {
       const text = table.innerText.toLowerCase();
       
-      // 1. Try stu_StudentTimeTable.htm format
       if (text.includes('course name') && (text.includes('date & day') || text.includes('start time') || text.includes('faculty name'))) {
         const parsed = this._parseStudentTimeTable(table);
         if (parsed && Object.keys(parsed.days).length > 0) {
@@ -879,7 +868,6 @@ export class JunoAdapter extends BasePortalAdapter {
         }
       }
 
-      // 2. Try matrix table format
       const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
       const daysFound = dayNames.filter(d => text.includes(d));
 
@@ -933,7 +921,7 @@ export class JunoAdapter extends BasePortalAdapter {
     let currentDateStr = '';
     let currentDayName = '';
 
-    const dayNamesList = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const dayNamesList = DAY_NAMES;
 
     for (let r = headerRowIdx + 1; r < rows.length; r++) {
       const row = rows[r];
@@ -950,7 +938,7 @@ export class JunoAdapter extends BasePortalAdapter {
       let facultyName = null;
       let room = null;
 
-      // Check if first cell contains a date/day name
+
       const firstCellText = cleanDOMText(cells[0].innerText);
       const isDateRow = dayNamesList.some(d => firstCellText.toLowerCase().includes(d.toLowerCase()));
 
@@ -977,7 +965,7 @@ export class JunoAdapter extends BasePortalAdapter {
         facultyName = cells[6] ? cleanDOMText(cells[6].innerText) : null;
       }
 
-      // Fallback: If courseName looks like time (e.g. "11:00 AM") or empty, scan cells
+      // courseName can end up being a time string if columns shift — rescan in that case
       if (!courseName || courseName === '-' || /^\d{1,2}:\d{2}/.test(courseName)) {
         for (let c = 0; c < cells.length; c++) {
           const txt = cleanDOMText(cells[c].innerText);
@@ -988,7 +976,7 @@ export class JunoAdapter extends BasePortalAdapter {
         }
       }
 
-      // Forceful Faculty Extraction from table cells
+
       if (!facultyName || facultyName === '-' || facultyName.length < 3) {
         for (let c = 0; c < cells.length; c++) {
           const txt = cleanDOMText(cells[c].innerText);
@@ -1165,7 +1153,6 @@ export class JunoAdapter extends BasePortalAdapter {
       console.warn('[JunoAdapter] Error extracting header user info:', e);
     }
 
-    // Strategy 2: Common Juno & ASP.NET label IDs / classes
     if (!info.name) {
       const selectors = [
         '#lblUserName', '#lblStudentName', '#lblUser', '#lblStudent',
@@ -1185,11 +1172,9 @@ export class JunoAdapter extends BasePortalAdapter {
       }
     }
 
-    // Strategy 3: Regex scan across document body
     if (document.body) {
       const bodyText = document.body.innerText || '';
 
-      // Pattern: "Name \n Student"
       if (!info.name) {
         const headerMatch = bodyText.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\s*\n\s*Student\b/i);
         if (headerMatch && !isExcluded(headerMatch[1])) {
@@ -1197,7 +1182,6 @@ export class JunoAdapter extends BasePortalAdapter {
         }
       }
 
-      // Pattern: "Student Name : Richa Pradeep Rajan"
       if (!info.name) {
         const nameMatch = bodyText.match(/(?:Student Name|Name of Student|Candidate Name)\s*[:\-]\s*([A-Za-z\s\.\'\-]+?)(?:\s*\(|\s*\n|\s*\[|\s*Roll|\s*Reg|\s*ID|\s*Branch|$)/i);
         if (nameMatch && !isExcluded(nameMatch[1])) {
@@ -1205,7 +1189,6 @@ export class JunoAdapter extends BasePortalAdapter {
         }
       }
 
-      // Pattern: "Welcome, <Name>"
       if (!info.name) {
         const welcomeMatch = bodyText.match(/Welcome\s*,\s*([A-Za-z\s\.\'\-]+?)(?:\s*\(|\s*\n|\s*\[|$)/i);
         if (welcomeMatch && !isExcluded(welcomeMatch[1])) {
@@ -1213,7 +1196,7 @@ export class JunoAdapter extends BasePortalAdapter {
         }
       }
 
-      // Semester, Branch, Section
+
       const semMatch = bodyText.match(/semester\s*[:\-]?\s*(\w+)/i) || bodyText.match(/term\s*\(\s*semester\s*\)\s*[:\-]?\s*(\w+)/i);
       if (semMatch) info.semester = semMatch[1].trim();
 
@@ -1230,10 +1213,6 @@ export class JunoAdapter extends BasePortalAdapter {
     return info;
   }
 
-  // ──────────────────────────────────────────────
-  // Helpers
-  // ──────────────────────────────────────────────
-
   _detectClassType(text) {
     const lower = text.toLowerCase();
     if (lower.includes('lab') || lower.includes('practical')) return 'Lab';
@@ -1249,21 +1228,11 @@ export class JunoAdapter extends BasePortalAdapter {
     return roomMatch ? roomMatch[1] : null;
   }
 
-  // ──────────────────────────────────────────────
-  // Academic Calendar & Holiday Parser
-  // ──────────────────────────────────────────────
-
-  /**
-   * Parse holidays and key semester dates from the Academic Calendar page.
-   * Scans for dates marked with green indicators/text or explicit holiday labels.
-   * @returns {{ holidays: Array<{ date: string, name: string, isHoliday: boolean }>, semesterEndDate: string|null }}
-   */
   parseHolidays() {
     const holidays = [];
     let semesterEndDate = null;
     const seenDates = new Set();
 
-    // Strategy 1: Look for table rows in the academic calendar
     const rows = document.querySelectorAll('tr');
     for (const row of rows) {
       const cells = row.querySelectorAll('td, th');
@@ -1273,7 +1242,7 @@ export class JunoAdapter extends BasePortalAdapter {
       const isGreen = this._isElementOrChildGreen(row);
       const isHolidayText = /holiday|vacation|jayanti|diwali|holi|eid|christmas|festival|independence|republic/i.test(rowText);
 
-      // Check for semester end marker
+
       if (/last\s*working\s*day|last\s*teaching\s*day|term\s*end|semester\s*end/i.test(rowText)) {
         const dateMatch = this._extractDateFromText(rowText);
         if (dateMatch && !semesterEndDate) {
@@ -1296,10 +1265,8 @@ export class JunoAdapter extends BasePortalAdapter {
       }
     }
 
-    // Strategy 2: Look for calendar cells / grid items marked green
     const greenElements = document.querySelectorAll('[style*="green"], [style*="#28a745"], [style*="#22c55e"], [style*="#16a34a"], [class*="success"], [class*="green"], [class*="holiday"]');
     for (const el of greenElements) {
-      // Find parent or nearby container with date context
       const container = el.closest('td, tr, .fc-event, [class*="day"], [class*="card"], li') || el;
       const text = cleanDOMText(container.innerText);
       const dateStr = this._extractDateFromText(text) || this._extractDateFromElement(container);
@@ -1318,7 +1285,6 @@ export class JunoAdapter extends BasePortalAdapter {
       }
     }
 
-    // Sort by date
     holidays.sort((a, b) => a.date.localeCompare(b.date));
 
     return { holidays, semesterEndDate };
@@ -1340,13 +1306,11 @@ export class JunoAdapter extends BasePortalAdapter {
   _extractDateFromText(text) {
     if (!text) return null;
 
-    // Pattern 1: DD/MM/YYYY or DD-MM-YYYY
     const dmyMatch = text.match(/\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\b/);
     if (dmyMatch) {
       return `${dmyMatch[3]}-${dmyMatch[2].padStart(2, '0')}-${dmyMatch[1].padStart(2, '0')}`;
     }
 
-    // Pattern 2: DD-Mon-YYYY or DD Mon YYYY (e.g. 23-Aug-2026 or 23 Aug 2026)
     const monMatch = text.match(/\b(\d{1,2})[\s\-]*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[\s\-,]*(\d{4})\b/i);
     if (monMatch) {
       const months = {
@@ -1372,7 +1336,6 @@ export class JunoAdapter extends BasePortalAdapter {
   }
 
   _extractHolidayName(cells, rowText) {
-    // If multiple cells, find the one with description/name
     if (cells && cells.length >= 2) {
       for (const cell of cells) {
         const text = cleanDOMText(cell.innerText);
@@ -1382,35 +1345,11 @@ export class JunoAdapter extends BasePortalAdapter {
       }
     }
 
-    // Fallback: strip date from row text
+
     return rowText.replace(/\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}\b/g, '').replace(/holiday|vacation/gi, '').trim() || 'Holiday';
   }
 
-  _isSubjectBlacklisted(subjectName) {
-    if (!subjectName) return true;
-    const lower = subjectName.toLowerCase().trim();
-    // Exclude exact matches or simple menu items
-    const blacklistExact = new Set([
-      'profile', 'my profile', 'syllabus', 'calendar', 'calender', 'academic calendar', 'academic calender',
-      'timetable', 'time table', 'student timetable', 'student timetable', 'library', 'library (0 issued)',
-      'fees details', 'fees', 'fees detail', 'leave details', 'leave detail', 'leave', 'hostel',
-      'contact mentor', 'mentor', 'mentoring', 'blogs', 'blog', 'dashboard', 'logout',
-      'change password', 'feedback', 'registration', 'exam registration', 'result', 'results',
-      'admit card', 'hall ticket', 'curriculum', 'home', 'about', 'contact', 'gallery', 'news',
-      'event', 'events', 'admission', 'admissions', 'placement', 'placements', 'grievance',
-      'alumni', 'anti ragging', 'download', 'downloads', 'course file', 'student portfolio',
-      'mentee', 'blogs details', 'academic schedule', 'syllabus plan', 'contact mentor', 'leave details'
-    ]);
-
-    if (blacklistExact.has(lower)) return true;
-
-    // Check partial containment for utility-specific keywords
-    const blacklistContains = [
-      'library (', 'contact mentor', 'leave details', 'fees details', 'leave report', 'admit card',
-      'change password', 'sign out', 'signout', 'my profile', 'feedback form'
-    ];
-    if (blacklistContains.some(term => lower.includes(term))) return true;
-
-    return false;
+  _isSubjectBlacklisted(name) {
+    return isSubjectBlacklisted(name);
   }
 }

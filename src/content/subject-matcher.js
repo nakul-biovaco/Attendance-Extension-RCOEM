@@ -1,23 +1,23 @@
-/**
- * Copyright (c) 2026 Nakul Mundhada. All Rights Reserved.
- * 
- * PROPRIETARY & CONFIDENTIAL SOURCE CODE.
- * This software is the intellectual property of Nakul Mundhada.
- * Unauthorized modification, redistribution, re-licensing, or commercial
- * exploitation is strictly prohibited without prior written consent.
- * 
- * Author: Nakul Mundhada (https://github.com/nakul-biovaco)
- */
+// (c) 2026 Nakul Mundhada. All rights reserved.
 
-import { normalizeSubjectName, normalizeCourseCode, tokenSimilarity, isSubstringMatch } from '../utils/normalizer.js';
+import { normalizeSubjectName, normalizeCourseCode, tokenSimilarity, isSubstringMatch, buildAcronym, buildFullAcronym } from '../utils/normalizer.js';
 import { MatchMethod } from '../types/models.js';
 
 export function matchSubjects(scheduleClasses, subjects, aliasMap = {}, matchCache = {}) {
   const results = [];
   const usedSubjects = new Set();
 
+  // Pre-compute acronym index once for all subjects instead of per-class.
+  const acronymIndex = new Map();
+  for (const s of subjects) {
+    acronymIndex.set(s.id, {
+      short: buildAcronym(s.name),
+      full: buildFullAcronym(s.name),
+    });
+  }
+
   for (const cls of scheduleClasses) {
-    const match = findBestMatch(cls, subjects, aliasMap, matchCache, usedSubjects);
+    const match = findBestMatch(cls, subjects, aliasMap, matchCache, usedSubjects, acronymIndex);
     results.push(match);
 
     if (match.attendanceSubject) {
@@ -28,10 +28,9 @@ export function matchSubjects(scheduleClasses, subjects, aliasMap = {}, matchCac
   return results;
 }
 
-function findBestMatch(cls, subjects, aliasMap, matchCache, usedSubjects) {
+function findBestMatch(cls, subjects, aliasMap, matchCache, usedSubjects, acronymIndex) {
   const available = subjects.filter(s => !usedSubjects.has(s.id));
 
-  // 0. Faculty + Short-Name Unique Lock (1 Subject -> 1 Faculty, Faculty can teach multiple subjects)
   if (cls.facultyName && cls.facultyName !== '-' && cls.facultyName.length >= 3) {
     const facultyNorm = cls.facultyName.toLowerCase().trim();
     const rawShort = (cls.subjectName || '').trim();
@@ -42,15 +41,9 @@ function findBestMatch(cls, subjects, aliasMap, matchCache, usedSubjects) {
       const hasFacultyMatch = subFaculty && (subFaculty === facultyNorm || subFaculty.includes(facultyNorm) || facultyNorm.includes(subFaculty));
       
       if (hasFacultyMatch) {
-        const sName = subject.name || '';
-        const words = sName.replace(/\s*\([^)]*\)/g, '').replace(/[^a-zA-Z0-9\s]/g, ' ').split(/\s+/).filter(w => {
-          const lw = w.toLowerCase();
-          return lw.length > 0 && !['and', 'a', 'an', 'or', 'of', 'the', 'in', 'for', 'to', 'with', '&', 'at', 'on', 'by', 'from', 'ii', 'iii', 'iv', 'lab', 'practical', 'pr', 'p'].includes(lw);
-        });
-        const acronym = words.map(w => w[0]).join('').toUpperCase();
-        const allWordsAcronym = sName.replace(/[^a-zA-Z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 0).map(w => w[0]).join('').toUpperCase();
+        const idx = acronymIndex.get(subject.id) || { short: '', full: '' };
 
-        if (acronym === cleanShort || allWordsAcronym === cleanShort || sName.toUpperCase().includes(cleanShort)) {
+        if (idx.short === cleanShort || idx.full === cleanShort || subject.name.toUpperCase().includes(cleanShort)) {
           cls.matchConfidence = 0.99;
           cls.subjectId = subject.id;
           return {
@@ -58,14 +51,13 @@ function findBestMatch(cls, subjects, aliasMap, matchCache, usedSubjects) {
             attendanceSubject: subject,
             confidence: 0.99,
             method: MatchMethod.NAME_FUZZY,
-            reason: `Faculty + Acronym lock: "${cls.facultyName}" + "${rawShort}" → "${subject.name}"`,
+            reason: `Faculty + Acronym lock: "${cls.facultyName}" + "${rawShort}" -> "${subject.name}"`,
           };
         }
       }
     }
   }
 
-  // 1. Confirmed Match Cache
   const cacheKey = cls.normalizedName || normalizeSubjectName(cls.subjectName);
   if (matchCache[cacheKey]) {
     const cached = available.find(s => s.id === matchCache[cacheKey]);
@@ -82,7 +74,6 @@ function findBestMatch(cls, subjects, aliasMap, matchCache, usedSubjects) {
     }
   }
 
-  // 2. User Alias Map
   const aliasKey = (cls.subjectName || '').toLowerCase().trim();
   if (aliasMap[aliasKey]) {
     const aliasTarget = aliasMap[aliasKey].toLowerCase().trim();
@@ -101,7 +92,6 @@ function findBestMatch(cls, subjects, aliasMap, matchCache, usedSubjects) {
     }
   }
 
-  // 3. Exact Subject Name Match
   const normalizedClassName = normalizeSubjectName(cls.subjectName);
   for (const subject of available) {
     if (normalizeSubjectName(subject.name) === normalizedClassName) {
@@ -117,7 +107,6 @@ function findBestMatch(cls, subjects, aliasMap, matchCache, usedSubjects) {
     }
   }
 
-  // 4. Short Name to Full Name Acronym Matching (ONLY Short-Name → Full-Name)
   const rawShort = (cls.subjectName || '').trim();
   const cleanShort = rawShort.replace(/\s*\([^)]*\)/g, '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
   const isPracticalClass = rawShort.toLowerCase().includes('(p)') || rawShort.toLowerCase().includes('lab') || rawShort.toLowerCase().includes('practical');
@@ -140,16 +129,10 @@ function findBestMatch(cls, subjects, aliasMap, matchCache, usedSubjects) {
         }
       }
 
-      const words = sName.replace(/\s*\([^)]*\)/g, '').replace(/[^a-zA-Z0-9\s]/g, ' ').split(/\s+/).filter(w => {
-        const lw = w.toLowerCase();
-        return lw.length > 0 && !['and', 'a', 'an', 'or', 'of', 'the', 'in', 'for', 'to', 'with', '&', 'at', 'on', 'by', 'from', 'ii', 'iii', 'iv', 'lab', 'practical', 'pr', 'p'].includes(lw);
-      });
-      const acronym = words.map(w => w[0]).join('').toUpperCase();
-      const allWordsAcronym = sName.replace(/[^a-zA-Z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 0).map(w => w[0]).join('').toUpperCase();
-
+      const idx = acronymIndex.get(subject.id) || { short: '', full: '' };
       const hasParenthesizedCode = sName.toUpperCase().includes(`(${cleanShort})`) || sName.toUpperCase().includes(`[${cleanShort}]`);
 
-      if (hasParenthesizedCode || acronym === cleanShort || allWordsAcronym === cleanShort) {
+      if (hasParenthesizedCode || idx.short === cleanShort || idx.full === cleanShort) {
         cls.matchConfidence = 0.94;
         cls.subjectId = subject.id;
         return {
@@ -157,7 +140,7 @@ function findBestMatch(cls, subjects, aliasMap, matchCache, usedSubjects) {
           attendanceSubject: subject,
           confidence: 0.94,
           method: MatchMethod.NAME_FUZZY,
-          reason: `Acronym match: "${rawShort}" → "${subject.name}"`,
+          reason: `Acronym match: "${rawShort}" -> "${subject.name}"`,
         };
       }
     }
