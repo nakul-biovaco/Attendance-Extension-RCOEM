@@ -15,8 +15,8 @@ If you're studying at **RCOEM / RBU**, you already know the pain of maintaining 
 
 Every single semester, it's the same story:
 - Opening Juno Campus portal, calculating fractions in your head (`7/18 = 38.8%`, `14/20 = 70.0%`).
-- Wondering: *"If I bunk CN on Wednesday, will my attendance crash?"* or *"How many consecutive MTT lectures do I need to attend to hit 75%?"*.
-- Staring at cryptic timetable short codes like `OSC`, `SA`, `MTT`, `SSOS`, `CS` without knowing which full subject or faculty they belong to.
+- Wondering: *"If I bunk DSA on Wednesday, will my attendance crash?"* or *"How many consecutive DBMS lectures do I need to attend to hit 75%?"*.
+- Staring at cryptic timetable short codes like `DSA`, `DBMS`, `OS`, `AI`, `SE` without knowing which full subject or faculty they belong to.
 
 Doing manual mental math and spreadsheets between classes was frustrating. So I sat down and built **Operation 75** from scratch — a clean, lightweight, client-side Chrome Extension that injects smart insights, dynamic future predictions, and safe bunk dates directly into the Juno portal.
 
@@ -25,21 +25,21 @@ Doing manual mental math and spreadsheets between classes was frustrating. So I 
 ## ✨ Features That Actually Save Your Semester
 
 ### 1. ⚡ 100% Pure Dynamic Portal Resolution (Zero Hardcoded Maps)
-- I didn't want any lazy hardcoded subject maps that break across semesters or different branches (ECE, CSE, IT, ME, etc.).
+- I didn't want any lazy hardcoded subject maps that break across semesters or different engineering branches (CSE, IT, ECE, ME, CE, EE, etc.).
 - The extension parses raw timetable cells dynamically in real-time, stripping conjunctions and prepositions (`and`, `&`, `of`, `the`, `in`, `for`, `with`) to resolve initials into full course names:
-  - `SA` $\rightarrow$ **Smart Antenna**
-  - `OSC` $\rightarrow$ **Optical and Satellite Communication**
-  - `MTT` $\rightarrow$ **Microwave Theory & Techniques**
-  - `CN` $\rightarrow$ **Computer Networks** / `CN (P)` $\rightarrow$ **Computer Networks Lab**
-  - `SSOS` $\rightarrow$ **System Software & Operating System**
-  - `CS` $\rightarrow$ **Control Systems**
-- Built-in substring collision shield ensures `SA` doesn't wrongly latch onto the word `satellite` inside `OSC`.
+  - `DSA` $\rightarrow$ **Data Structures & Algorithms**
+  - `DBMS` $\rightarrow$ **Database Management Systems**
+  - `OS` $\rightarrow$ **Operating Systems** / `OS (P)` $\rightarrow$ **Operating Systems Lab**
+  - `AI` $\rightarrow$ **Artificial Intelligence**
+  - `SE` $\rightarrow$ **Software Engineering**
+  - `DCN` $\rightarrow$ **Data Communication & Networks**
+- Built-in substring collision shield ensures short codes don't wrongly latch onto internal word substrings.
 
 ### 2. 📈 Real-Time Future Attendance Trajectory
 - In your monthly timetable, it doesn't just slap a static attendance percentage on every row.
 - It calculates a **progressive cumulative forecast** across upcoming calendar dates:
   - As you attend lecture-by-lecture, your forecasted percentage climbs dynamically:
-    - `Computer Networks` (Base: `38.9%`) $\rightarrow$ Lecture 1: `MUST ATTEND (42.1%)` $\rightarrow$ Lecture 2: `MUST ATTEND (45.0%)` $\rightarrow$ Lecture 3: `MUST ATTEND (47.6%)`...
+    - `Data Structures & Algorithms` (Base: `38.9%`) $\rightarrow$ Lecture 1: `MUST ATTEND (42.1%)` $\rightarrow$ Lecture 2: `MUST ATTEND (45.0%)` $\rightarrow$ Lecture 3: `MUST ATTEND (47.6%)`...
   - The moment you cross 75%, it automatically transitions to **`TARGET ACHIEVED (75.0%)`** and then calculates **`SAFE TO BUNK (1 safe • 76.0%)`**!
 
 ### 3. 📅 Date-Wise Semester Bunk Planner
